@@ -1,13 +1,82 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion as m, useMotionValue, useReducedMotion, useSpring } from "motion/react";
+import {
+  motion as m,
+  useAnimationFrame,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  useTransform,
+} from "motion/react";
 import { cn } from "@/lib/utils";
 
 type MotionPreference = "calm" | "showtime";
 
 function shouldSoftenMotion(reduced: boolean | null, preference?: MotionPreference) {
   return Boolean(reduced) || preference === "calm";
+}
+
+export function ShinyText({
+  text,
+  className,
+  color = "#b5b5b5",
+  shineColor = "#ffffff",
+  speed = 2.8,
+  delay = 0.7,
+  motion = "showtime",
+}: {
+  text: string;
+  className?: string;
+  color?: string;
+  shineColor?: string;
+  speed?: number;
+  delay?: number;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+  const progress = useMotionValue(0);
+  const elapsedRef = useRef(0);
+  const lastTimeRef = useRef<number | null>(null);
+  const duration = Math.max(0.5, speed) * 1000;
+  const delayDuration = Math.max(0, delay) * 1000;
+
+  useAnimationFrame((time) => {
+    if (calm) {
+      progress.set(38);
+      lastTimeRef.current = null;
+      return;
+    }
+
+    if (lastTimeRef.current === null) {
+      lastTimeRef.current = time;
+      return;
+    }
+
+    elapsedRef.current += time - lastTimeRef.current;
+    lastTimeRef.current = time;
+    const cycleTime = elapsedRef.current % (duration + delayDuration);
+    progress.set(cycleTime < duration ? (cycleTime / duration) * 100 : 100);
+  });
+
+  const backgroundPosition = useTransform(progress, (value) => `${150 - value * 2}% center`);
+
+  return (
+    <m.span
+      className={cn("inline-block", className)}
+      style={{
+        backgroundImage: `linear-gradient(115deg, ${color} 0%, ${color} 34%, ${shineColor} 50%, ${color} 66%, ${color} 100%)`,
+        backgroundSize: "220% auto",
+        backgroundPosition,
+        WebkitBackgroundClip: "text",
+        backgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+      }}
+    >
+      {text}
+    </m.span>
+  );
 }
 
 export function AuroraBackdrop({
@@ -111,6 +180,50 @@ export function SpotlightCard({
       <div className="pointer-events-none absolute inset-px rounded-[calc(2rem-1px)] border border-white/10" />
       {children}
     </article>
+  );
+}
+
+export function GlareHover({
+  children,
+  className,
+  glareColor = "#ffffff",
+  glareOpacity = 0.38,
+  glareAngle = -35,
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  glareColor?: string;
+  glareOpacity?: number;
+  glareAngle?: number;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+  const [active, setActive] = useState(false);
+
+  return (
+    <div
+      className={cn("relative overflow-hidden", className)}
+      onPointerEnter={() => setActive(true)}
+      onPointerLeave={() => setActive(false)}
+    >
+      {children}
+      <span
+        className={cn(
+          "pointer-events-none absolute inset-0 transition-[background-position,opacity] duration-700 ease-out",
+          active && !calm ? "opacity-100" : "opacity-0",
+        )}
+        style={{
+          background: `linear-gradient(${glareAngle}deg, transparent 58%, color-mix(in srgb, ${glareColor} ${Math.round(
+            glareOpacity * 100,
+          )}%, transparent) 70%, transparent 86%)`,
+          backgroundSize: "250% 250%",
+          backgroundPosition: active && !calm ? "100% 100%" : "-100% -100%",
+        }}
+        aria-hidden="true"
+      />
+    </div>
   );
 }
 

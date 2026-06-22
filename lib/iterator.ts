@@ -20,6 +20,16 @@ export function windowAroundIndex<T>(items: readonly T[], activeIndex: number, r
   });
 }
 
+export function steppedCycle<T>(items: readonly T[], activeIndex: number, count: number, step = 1) {
+  if (items.length === 0 || count <= 0) return [];
+  const safeStep = step === 0 ? 1 : Math.trunc(step);
+
+  return Array.from({ length: Math.floor(count) }, (_, offset) => {
+    const index = cycleIndex(activeIndex, items.length, offset * safeStep);
+    return { item: items[index]!, index, step: offset };
+  });
+}
+
 export function useIterator<T>({
   items,
   initialIndex = 0,

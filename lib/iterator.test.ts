@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cycleIndex, itemAtCycle, windowAroundIndex } from "@/lib/iterator";
+import { cycleIndex, itemAtCycle, steppedCycle, windowAroundIndex } from "@/lib/iterator";
 
 describe("iterator helpers", () => {
   it("wraps indexes in both directions", () => {
@@ -17,6 +17,14 @@ describe("iterator helpers", () => {
       { item: "d", index: 3, distance: -1 },
       { item: "a", index: 0, distance: 0 },
       { item: "b", index: 1, distance: 1 },
+    ]);
+  });
+
+  it("builds stepped cyclic sequences for rotating panels", () => {
+    expect(steppedCycle(["a", "b", "c", "d"], 3, 3, 2)).toEqual([
+      { item: "d", index: 3, step: 0 },
+      { item: "b", index: 1, step: 1 },
+      { item: "d", index: 3, step: 2 },
     ]);
   });
 });

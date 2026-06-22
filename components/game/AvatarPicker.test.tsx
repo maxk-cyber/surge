@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AvatarPicker } from "@/components/game/AvatarPicker";
@@ -41,6 +41,11 @@ vi.mock("motion/react", () => {
 describe("AvatarPicker", () => {
   beforeEach(() => {
     localStorage.clear();
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      },
+    });
   });
 
   it("renders public PNG avatars and cycles to the next fighter", async () => {
@@ -66,5 +71,35 @@ describe("AvatarPicker", () => {
     render(React.createElement(AvatarPicker, { filter: "favorites", favorites: [] }));
 
     expect(screen.getByText(/No fighters in this tray/i)).toBeInTheDocument();
+  });
+
+  it("searches, sorts, announces active cards, and copies rich summaries", async () => {
+    const user = userEvent.setup();
+    const onActiveChange = vi.fn();
+
+    render(
+      React.createElement(AvatarPicker, {
+        query: "cheese",
+        sort: "weird",
+        favorites: [],
+        onActiveChange,
+      }),
+    );
+
+    expect(screen.getByText(/Search: cheese/i)).toBeInTheDocument();
+    expect(screen.getByAltText("Nachomancer portrait")).toHaveAttribute(
+      "src",
+      "/avatars/nachomancer.png",
+    );
+    await waitFor(() => expect(onActiveChange).toHaveBeenCalledWith("nachomancer"));
+
+    await user.click(screen.getByRole("button", { name: /copy nachomancer card summary/i }));
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      expect.stringContaining("Nachomancer #007 - Triangle summoner"),
+    );
+    expect(screen.getByRole("button", { name: /copy nachomancer card summary/i })).toHaveTextContent(
+      /Copied/i,
+    );
   });
 });
