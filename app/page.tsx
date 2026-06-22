@@ -1,28 +1,36 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AvatarPicker } from "@/components/game/AvatarPicker";
 import {
   AnimatedReveal,
   AuroraBackdrop,
   ClickSpark,
+  GlareHover,
   MagneticButton,
+  ShinyText,
   SpotlightCard,
 } from "@/components/ui/reactbits-effects";
 import { avatarGalleryImages, avatarScrollImages } from "@/lib/gallery-images";
-import { useIterator } from "@/lib/iterator";
+import { steppedCycle, useIterator } from "@/lib/iterator";
 import {
   HERO_BEATS,
+  SCOUT_TRANSMISSIONS,
   SHOWROOM_STORAGE_KEYS,
   VIBE_MODES,
-  filterFighters,
+  browseFighters,
   formatRosterStats,
+  getFavoriteProgress,
+  getRarityOdds,
   isMotionLevel,
   isVibeMode,
   parseStoredFavorites,
+  parseStoredRecent,
   toggleFavorite,
+  updateRecentFighters,
   type FighterFilter,
+  type FighterSort,
   type MotionLevel,
   type VibeModeId,
 } from "@/lib/showroom";
@@ -42,6 +50,13 @@ const filters: { id: FighterFilter; label: string }[] = [
   { id: "common", label: "Common" },
   { id: "rare", label: "Rare" },
   { id: "legend", label: "Legend" },
+];
+const sortOptions: { id: FighterSort; label: string }[] = [
+  { id: "number", label: "Card no." },
+  { id: "rarity", label: "Rarity" },
+  { id: "weird", label: "Weird" },
+  { id: "attack", label: "Attack" },
+  { id: "speed", label: "Speed" },
 ];
 
 function ShowroomDock() {
@@ -69,20 +84,40 @@ function ShowroomDock() {
 }
 
 export default function CardGalleryPage() {
+  const searchRef = useRef<HTMLInputElement>(null);
   const [vibe, setVibe] = useState<VibeModeId>("arcade");
   const [motionLevel, setMotionLevel] = useState<MotionLevel>("showtime");
   const [filter, setFilter] = useState<FighterFilter>("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<FighterSort>("number");
   const [favorites, setFavorites] = useState<PlayerAvatarId[]>([]);
+  const [recent, setRecent] = useState<PlayerAvatarId[]>([]);
   const vibeMode = VIBE_MODES[vibe];
-  const filteredCount = useMemo(
-    () => filterFighters(PLAYER_AVATARS, filter, favorites).length,
-    [favorites, filter],
+  const visibleFighters = useMemo(
+    () => browseFighters({ fighters: PLAYER_AVATARS, filter, favorites, query, sort }),
+    [favorites, filter, query, sort],
+  );
+  const filteredCount = visibleFighters.length;
+  const favoriteProgress = useMemo(() => getFavoriteProgress(favorites), [favorites]);
+  const rarityOdds = useMemo(() => getRarityOdds(visibleFighters), [visibleFighters]);
+  const recentFighters = useMemo(
+    () =>
+      recent
+        .map((id) => PLAYER_AVATARS.find((fighter) => fighter.id === id))
+        .filter((fighter): fighter is (typeof PLAYER_AVATARS)[number] => Boolean(fighter)),
+    [recent],
   );
   const hero = useIterator({
     items: HERO_BEATS,
     autoAdvanceMs: 2800,
     enabled: motionLevel === "showtime",
   });
+  const scout = useIterator({
+    items: SCOUT_TRANSMISSIONS,
+    autoAdvanceMs: 3600,
+    enabled: motionLevel === "showtime",
+  });
+  const spotlightOdds = steppedCycle(rarityOdds, scout.index, 3);
 
   useEffect(() => {
     const storedVibe = localStorage.getItem(SHOWROOM_STORAGE_KEYS.vibe);
@@ -90,6 +125,20 @@ export default function CardGalleryPage() {
     setVibe(isVibeMode(storedVibe) ? storedVibe : "arcade");
     setMotionLevel(isMotionLevel(storedMotion) ? storedMotion : "showtime");
     setFavorites(parseStoredFavorites(localStorage.getItem(SHOWROOM_STORAGE_KEYS.favorites)));
+    setRecent(parseStoredRecent(localStorage.getItem(SHOWROOM_STORAGE_KEYS.recent)));
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select")) return;
+      if (event.key === "/") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   const chooseVibe = (nextVibe: VibeModeId) => {
@@ -110,6 +159,14 @@ export default function CardGalleryPage() {
     });
   };
 
+  const recordActiveFighter = useCallback((id: PlayerAvatarId) => {
+    setRecent((current) => {
+      const next = updateRecentFighters(current, id);
+      localStorage.setItem(SHOWROOM_STORAGE_KEYS.recent, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   return (
     <ClickSpark motion={motionLevel}>
       <main className={cn("relative min-h-screen overflow-hidden bg-gradient-to-b pb-28", vibeMode.wash)}>
@@ -123,7 +180,12 @@ export default function CardGalleryPage() {
                 Snack Surge · Premium Fighter Showroom
               </p>
               <h1 className="mt-5 max-w-4xl font-display text-5xl uppercase leading-[0.92] tracking-[0.08em] text-foreground md:text-7xl lg:text-8xl">
-                Card gallery for cafeteria cryptids.
+                <ShinyText
+                  text="Card gallery for cafeteria cryptids."
+                  color="#f2f2f2"
+                  shineColor={vibeMode.accent}
+                  motion={motionLevel}
+                />
               </h1>
               <p
                 className="mt-5 min-h-8 font-body text-sm uppercase tracking-[0.2em]"
@@ -158,6 +220,26 @@ export default function CardGalleryPage() {
                     Live cabinet controls
                   </p>
                   <div className="mt-5 grid gap-3">
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-body text-[10px] uppercase tracking-[0.2em] text-secondary">
+                          Binder progress
+                        </p>
+                        <p className="font-body text-[10px] uppercase tracking-[0.2em] text-foreground">
+                          {favoriteProgress.collected}/{favoriteProgress.total}
+                        </p>
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/60 ring-1 ring-white/10">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-white via-white to-transparent transition-[width]"
+                          style={{ width: `${favoriteProgress.percent}%` }}
+                        />
+                      </div>
+                      <p className="mt-2 font-body text-xs leading-5 text-secondary/80">
+                        {favoriteProgress.percent}% collected · press <kbd className="rounded bg-white/10 px-1">/</kbd> to search.
+                      </p>
+                    </div>
+
                     <div>
                       <p className="mb-2 font-body text-[10px] uppercase tracking-[0.2em] text-secondary">
                         Vibe mode
@@ -208,6 +290,28 @@ export default function CardGalleryPage() {
                         ))}
                       </div>
                     </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-black/35 p-3">
+                      <p className="font-body text-[10px] uppercase tracking-[0.2em] text-secondary">
+                        Scout transmission
+                      </p>
+                      <p className="mt-2 min-h-10 font-body text-xs leading-5 text-foreground" aria-live="polite">
+                        {scout.activeItem}
+                      </p>
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        {spotlightOdds.map(({ item }) => (
+                          <div key={item.rarity} className="rounded-xl border border-white/10 bg-white/[0.04] p-2">
+                            <p className="font-body text-[8px] uppercase tracking-[0.18em] text-secondary">
+                              {item.rarity}
+                            </p>
+                            <p className="mt-1 font-display text-xl text-foreground">{item.percent}%</p>
+                            <p className="font-body text-[8px] uppercase tracking-[0.14em] text-secondary/80">
+                              {item.count} cards
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -220,7 +324,7 @@ export default function CardGalleryPage() {
             ["Roster", rosterStats.total, "PNG fighters loaded from public/avatars"],
             ["Legends", rosterStats.legend, "Top-tier pulls with premium foil"],
             ["Avg weird", rosterStats.averageWeird, "Snack Surge oddity score"],
-            ["Shown", filteredCount, `${filter} filter active`],
+            ["Shown", filteredCount, `${filter} · ${sort}${query.trim() ? ` · "${query.trim()}"` : ""}`],
           ].map(([label, value, body], index) => (
             <AnimatedReveal key={label} delay={index * 0.05} motion={motionLevel}>
               <SpotlightCard className="h-full p-5" spotlightColor={`${vibeMode.accent}1f`}>
@@ -319,6 +423,64 @@ export default function CardGalleryPage() {
             </div>
           </AnimatedReveal>
 
+          <AnimatedReveal delay={0.05} motion={motionLevel} className="w-full">
+            <SpotlightCard className="mb-5 w-full p-4 md:p-5" spotlightColor={`${vibeMode.accent}20`}>
+              <div className="grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
+                <label className="block">
+                  <span className="font-body text-[10px] uppercase tracking-[0.24em] text-secondary">
+                    Search the roster
+                  </span>
+                  <input
+                    ref={searchRef}
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Try legend, skull, cheese, HP, 100..."
+                    className="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-black/45 px-4 font-body text-sm text-foreground outline-none transition placeholder:text-secondary/55 focus:border-white/45 focus:ring-2 focus:ring-white/20"
+                    aria-label="Search fighters"
+                  />
+                </label>
+                <label className="block">
+                  <span className="font-body text-[10px] uppercase tracking-[0.24em] text-secondary">
+                    Sort deck
+                  </span>
+                  <select
+                    value={sort}
+                    onChange={(event) => setSort(event.target.value as FighterSort)}
+                    className="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-black/45 px-4 font-body text-xs uppercase tracking-[0.14em] text-foreground outline-none transition focus:border-white/45 focus:ring-2 focus:ring-white/20"
+                    aria-label="Sort fighters"
+                  >
+                    {sortOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="flex flex-wrap gap-2 md:justify-end">
+                  <MagneticButton
+                    onClick={() => {
+                      setQuery("");
+                      setFilter("all");
+                      setSort("number");
+                    }}
+                    aria-label="Reset fighter browser"
+                  >
+                    Reset
+                  </MagneticButton>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
+                <p className="font-body text-xs uppercase tracking-[0.18em] text-secondary" aria-live="polite">
+                  {filteredCount} visible · {favoriteProgress.collected} favorited · sorted by {sort}
+                </p>
+                <p className="font-body text-[10px] uppercase tracking-[0.18em] text-secondary/80">
+                  Shortcut: / search · arrows browse · F favorite
+                </p>
+              </div>
+            </SpotlightCard>
+          </AnimatedReveal>
+
           <div className="mb-8 flex flex-wrap justify-center gap-2" aria-label="Filter fighters">
             {filters.map((item) => (
               <button
@@ -337,27 +499,58 @@ export default function CardGalleryPage() {
             ))}
           </div>
 
+          {recentFighters.length > 0 && (
+            <AnimatedReveal delay={0.08} motion={motionLevel} className="mb-8 w-full">
+              <div className="mx-auto flex max-w-4xl flex-col items-center gap-3 rounded-[1.5rem] border border-white/10 bg-black/30 p-3 md:flex-row md:justify-between">
+                <p className="font-body text-[10px] uppercase tracking-[0.24em] text-secondary">
+                  Recent pulls
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {recentFighters.map((fighter) => (
+                    <button
+                      key={fighter.id}
+                      type="button"
+                      onClick={() => {
+                        setFilter("all");
+                        setQuery(fighter.label);
+                        setSort("number");
+                      }}
+                      className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 font-body text-[10px] uppercase tracking-[0.16em] text-secondary transition hover:border-white/35 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                    >
+                      {fighter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </AnimatedReveal>
+          )}
+
           <AvatarPicker
             vibe={vibe}
             motionLevel={motionLevel}
             filter={filter}
+            query={query}
+            sort={sort}
             favorites={favorites}
             onToggleFavorite={onToggleFavorite}
+            onActiveChange={recordActiveFighter}
           />
 
           <div className="mt-12 grid w-full gap-4 md:grid-cols-3">
             {PLAYER_AVATARS.slice(0, 3).map((fighter) => {
               const meta = FIGHTER_CARD_META[fighter.id];
               return (
-                <SpotlightCard key={fighter.id} className="p-5" spotlightColor={`${vibeMode.glow}20`}>
-                  <p className="font-body text-[10px] uppercase tracking-[0.28em] text-secondary">
-                    Scout note #{meta.number}
-                  </p>
-                  <p className="mt-3 font-display text-xl uppercase tracking-[0.08em] text-foreground">
-                    {fighter.label}
-                  </p>
-                  <p className="mt-2 font-body text-xs leading-6 text-secondary/85">{meta.flavor}</p>
-                </SpotlightCard>
+                <GlareHover key={fighter.id} className="h-full rounded-[2rem]" glareColor={vibeMode.accent} motion={motionLevel}>
+                  <SpotlightCard className="h-full p-5" spotlightColor={`${vibeMode.glow}20`}>
+                    <p className="font-body text-[10px] uppercase tracking-[0.28em] text-secondary">
+                      Scout note #{meta.number}
+                    </p>
+                    <p className="mt-3 font-display text-xl uppercase tracking-[0.08em] text-foreground">
+                      {fighter.label}
+                    </p>
+                    <p className="mt-2 font-body text-xs leading-6 text-secondary/85">{meta.flavor}</p>
+                  </SpotlightCard>
+                </GlareHover>
               );
             })}
           </div>

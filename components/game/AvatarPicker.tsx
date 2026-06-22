@@ -15,8 +15,10 @@ import {
 import { FIGHTER_CARD_META } from "@/lib/fighter-cards";
 import { cycleIndex } from "@/lib/iterator";
 import {
-  filterFighters,
+  browseFighters,
+  formatCardShareSummary,
   type FighterFilter,
+  type FighterSort,
   type MotionLevel,
   type VibeModeId,
   VIBE_MODES,
@@ -106,6 +108,8 @@ function FighterDeck({
         const isVisible = slot >= -2 && slot <= 2;
         const dealDelay = Math.abs(slot) * 0.07;
 
+        const canSelect = !isActive && isVisible;
+
         return (
           <motion.div
             key={itemIndex}
@@ -153,7 +157,7 @@ function FighterDeck({
               transformOrigin: "bottom center",
             }}
             whileHover={
-              !calm && !isActive && isVisible
+              !calm && canSelect
                 ? {
                     y: st.y - 22,
                     scale: st.scale + 0.05,
@@ -162,7 +166,20 @@ function FighterDeck({
                   }
                 : undefined
             }
-            onClick={!isActive && isVisible ? () => onSelectIndex(itemIndex) : undefined}
+            role={canSelect ? "button" : undefined}
+            tabIndex={canSelect ? 0 : undefined}
+            aria-label={canSelect ? `Select ${fighter.label}` : undefined}
+            onClick={canSelect ? () => onSelectIndex(itemIndex) : undefined}
+            onKeyDown={
+              canSelect
+                ? (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onSelectIndex(itemIndex);
+                    }
+                  }
+                : undefined
+            }
           >
             <TiltCard className="h-full w-full">
               <div className="h-full w-full">
@@ -184,14 +201,20 @@ export function AvatarPicker({
   vibe = "arcade",
   motionLevel = "showtime",
   filter = "all",
+  query = "",
+  sort = "number",
   favorites = [],
   onToggleFavorite,
+  onActiveChange,
 }: {
   vibe?: VibeModeId;
   motionLevel?: MotionLevel;
   filter?: FighterFilter;
+  query?: string;
+  sort?: FighterSort;
   favorites?: PlayerAvatarId[];
   onToggleFavorite?: (id: PlayerAvatarId) => void;
+  onActiveChange?: (id: PlayerAvatarId) => void;
 }) {
   const [selected, setSelected] = useState<PlayerAvatarId>("skullmic");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -199,15 +222,20 @@ export function AvatarPicker({
   const vibeMode = VIBE_MODES[vibe];
 
   const fighters = useMemo(
-    () => filterFighters(PLAYER_AVATARS, filter, favorites),
-    [favorites, filter],
+    () => browseFighters({ fighters: PLAYER_AVATARS, filter, favorites, query, sort }),
+    [favorites, filter, query, sort],
   );
 
   useEffect(() => {
     const id = getStoredAvatarId();
-    setSelected(id);
     const idx = fighters.findIndex((a) => a.id === id);
-    setActiveIndex(idx >= 0 ? idx : 0);
+    if (idx >= 0) {
+      setSelected(id);
+      setActiveIndex(idx);
+      return;
+    }
+    setSelected(fighters[0]?.id ?? id);
+    setActiveIndex(0);
   }, [fighters]);
 
   useEffect(() => {
@@ -252,9 +280,13 @@ export function AvatarPicker({
   const active = fighters[activeIndex] ?? fighters[0];
   const activeMeta = active ? FIGHTER_CARD_META[active.id] : null;
 
+  useEffect(() => {
+    if (active) onActiveChange?.(active.id);
+  }, [active, onActiveChange]);
+
   const copyActive = async () => {
     if (!active || !activeMeta) return;
-    const text = `${active.label} #${activeMeta.number} — ${active.tagline} (${activeMeta.rarity.toUpperCase()})`;
+    const text = formatCardShareSummary(active);
     try {
       await navigator.clipboard?.writeText(text);
       setCopied(true);
@@ -276,9 +308,21 @@ export function AvatarPicker({
             Filter: {filter}
           </span>
         )}
+        {query.trim() && (
+          <span className="rounded-full border border-white/15 bg-white/[0.08] px-2.5 py-0.5 font-body text-[9px] uppercase tracking-widest text-secondary">
+            Search: {query.trim()}
+          </span>
+        )}
+        <span className="rounded-full border border-white/15 bg-white/[0.08] px-2.5 py-0.5 font-body text-[9px] uppercase tracking-widest text-secondary">
+          Sort: {sort}
+        </span>
       </div>
       <p className="mb-2 text-center font-body text-[10px] uppercase tracking-widest text-secondary/80">
         Tap side cards, use arrow keys, or press F to favorite
+      </p>
+      <p className="sr-only" aria-live="polite">
+        {active ? `${active.label} selected. ${fighters.length} fighters visible.` : "No fighters visible."}
+        {copied ? " Card summary copied." : ""}
       </p>
 
       {active ? (

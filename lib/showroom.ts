@@ -4,12 +4,20 @@ import { PLAYER_AVATARS, type AvatarDef, type PlayerAvatarId } from "@/lib/avata
 export type VibeModeId = "arcade" | "toxic" | "noir";
 export type MotionLevel = "calm" | "showtime";
 export type FighterFilter = "all" | "favorites" | "common" | "rare" | "legend";
+export type FighterSort = "number" | "rarity" | "weird" | "attack" | "speed";
 
 export const SHOWROOM_STORAGE_KEYS = {
   vibe: "snack-surge-vibe",
   motion: "snack-surge-motion",
   favorites: "snack-surge-favorites",
+  recent: "snack-surge-recent",
 } as const;
+
+const RARITY_WEIGHT: Record<"common" | "rare" | "legend", number> = {
+  common: 1,
+  rare: 2,
+  legend: 3,
+};
 
 export const VIBE_MODES: Record<
   VibeModeId,
@@ -55,6 +63,13 @@ export const HERO_BEATS = [
   "A showroom for snack-fueled monsters.",
 ] as const;
 
+export const SCOUT_TRANSMISSIONS = [
+  "Search by fighter, snack, rarity, or stat type.",
+  "Favorite a pull to build your personal binder.",
+  "Use arrows to cycle the deck and F to star the active card.",
+  "Copy a card summary when you find a showroom-worthy menace.",
+] as const;
+
 export function isVibeMode(value: string | null): value is VibeModeId {
   return value === "arcade" || value === "toxic" || value === "noir";
 }
@@ -82,6 +97,10 @@ export function parseStoredFavorites(raw: string | null) {
   }
 }
 
+export function normalizeSearchQuery(query: string) {
+  return query.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 export function filterFighters(
   fighters: readonly AvatarDef[],
   filter: FighterFilter,
@@ -92,6 +111,101 @@ export function filterFighters(
     return fighters.filter((fighter) => favorites.includes(fighter.id));
   }
   return fighters.filter((fighter) => FIGHTER_CARD_META[fighter.id].rarity === filter);
+}
+
+export function searchFighters(fighters: readonly AvatarDef[], query: string) {
+  const normalized = normalizeSearchQuery(query);
+  if (!normalized) return [...fighters];
+
+  return fighters.filter((fighter) => {
+    const meta = FIGHTER_CARD_META[fighter.id];
+    const haystack = [
+      fighter.label,
+      fighter.tagline,
+      meta.type,
+      meta.rarity,
+      meta.flavor,
+      meta.number,
+      String(meta.hp),
+      String(meta.atk),
+      String(meta.spd),
+      String(meta.weird),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return haystack.includes(normalized);
+  });
+}
+
+export function sortFighters(fighters: readonly AvatarDef[], sort: FighterSort) {
+  return [...fighters].sort((a, b) => {
+    const aMeta = FIGHTER_CARD_META[a.id];
+    const bMeta = FIGHTER_CARD_META[b.id];
+
+    if (sort === "rarity") {
+      return RARITY_WEIGHT[bMeta.rarity] - RARITY_WEIGHT[aMeta.rarity] || aMeta.number.localeCompare(bMeta.number);
+    }
+    if (sort === "weird") return bMeta.weird - aMeta.weird || aMeta.number.localeCompare(bMeta.number);
+    if (sort === "attack") return bMeta.atk - aMeta.atk || aMeta.number.localeCompare(bMeta.number);
+    if (sort === "speed") return bMeta.spd - aMeta.spd || aMeta.number.localeCompare(bMeta.number);
+    return aMeta.number.localeCompare(bMeta.number);
+  });
+}
+
+export function browseFighters({
+  fighters,
+  filter,
+  favorites,
+  query,
+  sort,
+}: {
+  fighters: readonly AvatarDef[];
+  filter: FighterFilter;
+  favorites: readonly PlayerAvatarId[];
+  query: string;
+  sort: FighterSort;
+}) {
+  return sortFighters(searchFighters(filterFighters(fighters, filter, favorites), query), sort);
+}
+
+export function getFavoriteProgress(favorites: readonly string[], total = PLAYER_AVATARS.length) {
+  const collected = normalizeFavorites(favorites).length;
+  return {
+    collected,
+    total,
+    percent: total > 0 ? Math.round((collected / total) * 100) : 0,
+  };
+}
+
+export function parseStoredRecent(raw: string | null) {
+  if (!raw) return [];
+  try {
+    const value = JSON.parse(raw);
+    return Array.isArray(value) ? normalizeFavorites(value).slice(0, 5) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function updateRecentFighters(recent: readonly PlayerAvatarId[], id: PlayerAvatarId, limit = 5) {
+  return [id, ...recent.filter((recentId) => recentId !== id)].slice(0, Math.max(1, limit));
+}
+
+export function formatCardShareSummary(fighter: AvatarDef) {
+  const meta = FIGHTER_CARD_META[fighter.id];
+  return `${fighter.label} #${meta.number} - ${fighter.tagline} (${meta.rarity.toUpperCase()} · HP ${meta.hp} · ATK ${meta.atk} · SPD ${meta.spd} · WRD ${meta.weird})`;
+}
+
+export function getRarityOdds(fighters: readonly AvatarDef[] = PLAYER_AVATARS) {
+  const stats = getRosterStats(fighters);
+  const safeTotal = Math.max(1, stats.total);
+
+  return (["legend", "rare", "common"] as const).map((rarity) => ({
+    rarity,
+    count: stats[rarity],
+    percent: Math.round((stats[rarity] / safeTotal) * 100),
+  }));
 }
 
 export function getRosterStats(fighters: readonly AvatarDef[] = PLAYER_AVATARS) {
