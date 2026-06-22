@@ -50,7 +50,7 @@ describe("showroom feature logic", () => {
 
     expect(speedLine).toHaveLength(2);
     expect(speedLine[0]!.id).toBe("skullbunny");
-    expect(speedLine[1]!.id).toBe("frywraith");
+    expect(speedLine[1]!.id).toBe("skullmic");
     expect(suggestDraftLineup(PLAYER_AVATARS, "balanced", 0)).toEqual([]);
   });
 

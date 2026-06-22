@@ -59,17 +59,22 @@ describe("DraftAssistant", () => {
 
     expect(localStorage.getItem("snack-surge-draft-strategy")).toBe("speed");
     expect(screen.getByText(/Speed line/i)).toBeInTheDocument();
-    expect(screen.getByText(/Skull Bunny/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Skull Bunny/i).length).toBeGreaterThan(0);
   });
 
   it("copies a shareable squad summary", async () => {
     const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
 
     render(<DraftAssistant fighters={PLAYER_AVATARS.slice(0, 4)} motionLevel="calm" />);
 
     await user.click(screen.getByRole("button", { name: /Copy recommended lineup/i }));
 
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining("Snack Surge"));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Snack Surge"));
     expect(screen.getByRole("button", { name: /Copy recommended lineup/i })).toHaveTextContent("Copied squad");
   });
 });
