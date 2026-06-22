@@ -6,12 +6,11 @@ Built with React Bits:
 
 - **DomeGallery** — draggable 3D dome of fighter portraits
 - **FluidGlass** — scrollable lens refraction over avatar art
-- **Fighter cards** — full trading-card UI with SVG portrait art
+- **Fighter cards** — full trading-card UI with PNG portrait art
 
 ## Run
 
 ```bash
-cd card-gallery-lite
 npm install
 npm run dev
 ```
@@ -33,6 +32,5 @@ Open [http://localhost:3001](http://localhost:3001).
 
 ## Notes
 
-- Portraits use PNG assets from `public/avatars/` (copied from the main app).
+- Portraits use PNG assets from `public/avatars/`.
 - Dome / glass sections use the same PNG paths via `lib/gallery-images.ts`.
-- To refresh assets, copy from `../public/avatars/` in the main Snack Surge project.
