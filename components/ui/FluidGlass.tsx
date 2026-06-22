@@ -16,6 +16,7 @@ import {
   Text,
 } from "@react-three/drei";
 import { easing } from "maath";
+import { publicAssetPath } from "@/lib/public-path";
 
 type FluidGlassProps = {
   mode?: "lens" | "bar" | "cube";
@@ -27,11 +28,11 @@ type FluidGlassProps = {
 };
 
 const DEFAULT_AVATAR_IMAGES = [
-  "/avatars/skullmic.png",
-  "/avatars/skullbunny.png",
-  "/avatars/gaperskull.png",
-  "/avatars/nachomancer.png",
-  "/avatars/burgerlich.png",
+  publicAssetPath("/avatars/skullmic.png"),
+  publicAssetPath("/avatars/skullbunny.png"),
+  publicAssetPath("/avatars/gaperskull.png"),
+  publicAssetPath("/avatars/nachomancer.png"),
+  publicAssetPath("/avatars/burgerlich.png"),
 ];
 
 function absUrl(path: string) {
@@ -198,7 +199,7 @@ function Lens({
 }) {
   return (
     <ModeWrapper
-      glb="/assets/3d/lens.glb"
+      glb={publicAssetPath("/assets/3d/lens.glb")}
       geometryKey="Cylinder"
       followPointer
       modeProps={modeProps}
@@ -216,7 +217,7 @@ function Cube({
 }) {
   return (
     <ModeWrapper
-      glb="/assets/3d/cube.glb"
+      glb={publicAssetPath("/assets/3d/cube.glb")}
       geometryKey="Cube"
       followPointer
       modeProps={modeProps}
@@ -244,7 +245,7 @@ function Bar({
 
   return (
     <ModeWrapper
-      glb="/assets/3d/bar.glb"
+      glb={publicAssetPath("/assets/3d/bar.glb")}
       geometryKey="Cube"
       lockToBottom
       followPointer={false}
@@ -411,6 +412,6 @@ function Typography({ title }: { title: string }) {
   );
 }
 
-useGLTF.preload("/assets/3d/lens.glb");
-useGLTF.preload("/assets/3d/cube.glb");
-useGLTF.preload("/assets/3d/bar.glb");
+useGLTF.preload(publicAssetPath("/assets/3d/lens.glb"));
+useGLTF.preload(publicAssetPath("/assets/3d/cube.glb"));
+useGLTF.preload(publicAssetPath("/assets/3d/bar.glb"));

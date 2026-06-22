@@ -16,8 +16,15 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Snack Surge — Fighter Card Gallery",
-  description: "Lite card and avatar showcase with React Bits DomeGallery and FluidGlass.",
+  title: "Snack Surge — Premium Fighter Showroom",
+  description:
+    "A premium interactive fighter card showroom with PNG avatar art, ReactBits-style effects, filters, favorites, and motion controls.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
