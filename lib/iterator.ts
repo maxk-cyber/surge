@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export function cycleIndex(current: number, length: number, step = 1) {
+export function cycleIndex(current: number, length: number, step = 0) {
   if (length <= 0) return 0;
   return ((current + step) % length + length) % length;
 }

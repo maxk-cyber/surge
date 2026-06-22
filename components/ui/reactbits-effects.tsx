@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, useMotionValue, useReducedMotion, useSpring } from "motion/react";
+import { motion as m, useMotionValue, useReducedMotion, useSpring } from "motion/react";
 import { cn } from "@/lib/utils";
 
 type MotionPreference = "calm" | "showtime";
@@ -65,7 +65,7 @@ export function AnimatedReveal({
   const calm = shouldSoftenMotion(reduced, motion);
 
   return (
-    <motion.div
+    <m.div
       className={className}
       initial={{ opacity: 0, y: calm ? 0 : 22, filter: calm ? "none" : "blur(10px)" }}
       whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -73,7 +73,7 @@ export function AnimatedReveal({
       transition={{ duration: calm ? 0 : 0.55, delay: calm ? 0 : delay, ease: "easeOut" }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -148,7 +148,7 @@ export function MagneticButton({
   };
 
   return (
-    <motion.button
+    <m.button
       type={type}
       aria-label={ariaLabel}
       disabled={disabled}
@@ -164,7 +164,7 @@ export function MagneticButton({
       )}
     >
       {children}
-    </motion.button>
+    </m.button>
   );
 }
 

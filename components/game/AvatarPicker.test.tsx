@@ -47,7 +47,7 @@ describe("AvatarPicker", () => {
     const user = userEvent.setup();
     const onToggleFavorite = vi.fn();
 
-    render(<AvatarPicker favorites={[]} onToggleFavorite={onToggleFavorite} />);
+    render(React.createElement(AvatarPicker, { favorites: [], onToggleFavorite }));
 
     expect(screen.getByAltText("Skull Mickey portrait")).toHaveAttribute(
       "src",
@@ -63,7 +63,7 @@ describe("AvatarPicker", () => {
   });
 
   it("shows an empty state for an empty favorites filter", () => {
-    render(<AvatarPicker filter="favorites" favorites={[]} />);
+    render(React.createElement(AvatarPicker, { filter: "favorites", favorites: [] }));
 
     expect(screen.getByText(/No fighters in this tray/i)).toBeInTheDocument();
   });
