@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { enemyPortraitSrc, playerPortraitSrc } from "@/lib/avatar-assets";
 import type { EnemyKind, PlayerAvatarId } from "@/lib/avatars";
 import { cn } from "@/lib/utils";
@@ -10,7 +9,6 @@ export function FighterPortrait({
   enemy,
   size = 160,
   className,
-  priority = false,
   label,
 }: {
   id?: PlayerAvatarId | string;
@@ -27,15 +25,17 @@ export function FighterPortrait({
       : playerPortraitSrc("skullmic");
 
   return (
-    <Image
-      src={src}
-      alt={label ?? ""}
-      width={size}
-      height={size}
-      priority={priority}
-      className={cn("pointer-events-none select-none object-contain", className)}
-      aria-hidden={label ? undefined : true}
-      draggable={false}
-    />
+    <span
+      className={cn("inline-flex select-none items-center justify-center", className)}
+      style={{ width: size, height: size }}
+    >
+      <img
+        src={src}
+        alt={label ?? ""}
+        className="pointer-events-none max-h-full max-w-full object-contain"
+        aria-hidden={label ? undefined : true}
+        draggable={false}
+      />
+    </span>
   );
 }
