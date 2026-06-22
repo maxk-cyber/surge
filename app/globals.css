@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-background font-body text-foreground antialiased;
+  background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #0a0a0a 55%);
+}
+
+.fighter-card-pro {
+  background: linear-gradient(168deg, #222 0%, #0e0e0e 38%, #161616 100%);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.fighter-card-shine {
+  opacity: 0.35;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.15) 45%,
+    rgba(200, 200, 200, 0.08) 50%,
+    rgba(255, 255, 255, 0.12) 55%,
+    transparent 70%
+  );
+  background-size: 200% 200%;
+  animation: holo-shimmer 4s ease-in-out infinite;
+}
+
+@keyframes holo-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fighter-card-shine {
+    animation: none;
+  }
+}
+
+.gallery-section {
+  scroll-margin-top: 2rem;
+}
