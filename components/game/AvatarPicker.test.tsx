@@ -41,8 +41,9 @@ vi.mock("motion/react", () => {
 describe("AvatarPicker", () => {
   beforeEach(() => {
     localStorage.clear();
-    Object.assign(navigator, {
-      clipboard: {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
         writeText: vi.fn().mockResolvedValue(undefined),
       },
     });
@@ -75,6 +76,7 @@ describe("AvatarPicker", () => {
 
   it("searches, sorts, announces active cards, and copies rich summaries", async () => {
     const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
     const onActiveChange = vi.fn();
 
     render(
@@ -95,7 +97,7 @@ describe("AvatarPicker", () => {
 
     await user.click(screen.getByRole("button", { name: /copy nachomancer card summary/i }));
 
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+    expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("Nachomancer #007 - Triangle summoner"),
     );
     expect(screen.getByRole("button", { name: /copy nachomancer card summary/i })).toHaveTextContent(
