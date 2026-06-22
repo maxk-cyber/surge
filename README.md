@@ -7,9 +7,11 @@ Built with ReactBits-style interaction patterns:
 - **DomeGallery** — draggable 3D dome of fighter portraits
 - **FluidGlass** — scrollable lens refraction over avatar art
 - **Aurora / spotlight / magnetic / click-spark effects** — purposeful motion around the showroom
+- **Ribbon / shimmer effects** — lightweight ReactBits-style ambient lighting and focal text treatment
 - **Fighter cards** — full trading-card UI with PNG portrait art from `public/avatars`
-- **Skill controls** — vibe mode, motion intensity, rarity filters, favorites, keyboard browsing, and copy actions
-- **Iterator behavior** — rotating hero copy and cyclic card deck navigation
+- **Skill controls** — vibe mode, motion intensity, rarity filters, favorites, draft strategy, keyboard browsing, and copy actions
+- **Draft Intelligence** — tested squad recommendations with stat summaries and shareable lineup text
+- **Iterator behavior** — rotating hero copy, cyclic tactical prompts, and cyclic card deck navigation
 
 ## Run
 
@@ -37,10 +39,11 @@ npm run build
 | `components/ui/reactbits-effects.tsx` | Adapted aurora, reveal, spotlight, magnetic, and click-spark effects |
 | `components/game/FighterCard.tsx` | Trading card UI |
 | `components/game/AvatarPicker.tsx` | Card fan picker with filters, favorites, keyboard nav, and copy action |
+| `components/game/DraftAssistant.tsx` | Strategy-based recommendation panel with copyable squad summaries |
 | `lib/avatars.ts` | Fighter definitions |
 | `lib/fighter-cards.ts` | Card stats / rarity metadata |
 | `lib/iterator.ts` | Reusable cyclic iterator helpers |
-| `lib/showroom.ts` | UI preference, favorite, filter, and roster helpers |
+| `lib/showroom.ts` | UI preference, favorite, filter, roster, and draft intelligence helpers |
 | `public/avatars/` | PNG fighter and enemy portraits |
 | `public/assets/3d/` | GLB models for FluidGlass (`lens.glb`, etc.) |
 

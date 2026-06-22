@@ -3,11 +3,14 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { AvatarPicker } from "@/components/game/AvatarPicker";
+import { DraftAssistant } from "@/components/game/DraftAssistant";
 import {
   AnimatedReveal,
   AuroraBackdrop,
   ClickSpark,
   MagneticButton,
+  RibbonField,
+  ShimmerText,
   SpotlightCard,
 } from "@/components/ui/reactbits-effects";
 import { avatarGalleryImages, avatarScrollImages } from "@/lib/gallery-images";
@@ -54,6 +57,7 @@ function ShowroomDock() {
         ["Brief", "#brief"],
         ["Dome", "#globe"],
         ["Glass", "#glass"],
+        ["Scout", "#draft"],
         ["Cards", "#cards"],
       ].map(([label, href]) => (
         <a
@@ -74,10 +78,11 @@ export default function CardGalleryPage() {
   const [filter, setFilter] = useState<FighterFilter>("all");
   const [favorites, setFavorites] = useState<PlayerAvatarId[]>([]);
   const vibeMode = VIBE_MODES[vibe];
-  const filteredCount = useMemo(
-    () => filterFighters(PLAYER_AVATARS, filter, favorites).length,
+  const filteredFighters = useMemo(
+    () => filterFighters(PLAYER_AVATARS, filter, favorites),
     [favorites, filter],
   );
+  const filteredCount = filteredFighters.length;
   const hero = useIterator({
     items: HERO_BEATS,
     autoAdvanceMs: 2800,
@@ -114,6 +119,7 @@ export default function CardGalleryPage() {
     <ClickSpark motion={motionLevel}>
       <main className={cn("relative min-h-screen overflow-hidden bg-gradient-to-b pb-28", vibeMode.wash)}>
         <AuroraBackdrop accent={vibeMode.glow} glow={vibeMode.accent} motion={motionLevel} />
+        <RibbonField accent={vibeMode.accent} glow={vibeMode.glow} motion={motionLevel} />
         <ShowroomDock />
 
         <header id="brief" className="relative z-20 mx-auto grid min-h-[92vh] w-full max-w-7xl items-center gap-10 px-5 py-20 md:grid-cols-[1.05fr_0.95fr] md:px-8">
@@ -123,7 +129,7 @@ export default function CardGalleryPage() {
                 Snack Surge · Premium Fighter Showroom
               </p>
               <h1 className="mt-5 max-w-4xl font-display text-5xl uppercase leading-[0.92] tracking-[0.08em] text-foreground md:text-7xl lg:text-8xl">
-                Card gallery for cafeteria cryptids.
+                Card gallery for <ShimmerText motion={motionLevel}>cafeteria cryptids.</ShimmerText>
               </h1>
               <p
                 className="mt-5 min-h-8 font-body text-sm uppercase tracking-[0.2em]"
@@ -318,6 +324,12 @@ export default function CardGalleryPage() {
               </p>
             </div>
           </AnimatedReveal>
+
+          <div id="draft" className="mb-8 w-full scroll-mt-10">
+            <AnimatedReveal motion={motionLevel}>
+              <DraftAssistant fighters={filteredFighters} vibe={vibe} motionLevel={motionLevel} />
+            </AnimatedReveal>
+          </div>
 
           <div className="mb-8 flex flex-wrap justify-center gap-2" aria-label="Filter fighters">
             {filters.map((item) => (
