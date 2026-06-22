@@ -1,16 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { TiltCard } from "@/components/ui/TiltCard";
 import { FighterCard, FighterThumb } from "@/components/game/FighterCard";
+import { MagneticButton } from "@/components/ui/reactbits-effects";
 import {
   PLAYER_AVATARS,
   getStoredAvatarId,
   setStoredAvatarId,
+  type AvatarDef,
   type PlayerAvatarId,
 } from "@/lib/avatars";
-import { useCallback, useMemo, useState as useReactState } from "react";
+import { FIGHTER_CARD_META } from "@/lib/fighter-cards";
+import { cycleIndex } from "@/lib/iterator";
+import {
+  filterFighters,
+  type FighterFilter,
+  type MotionLevel,
+  type VibeModeId,
+  VIBE_MODES,
+} from "@/lib/showroom";
 
 const CARD_W = 272;
 const CARD_H = 460;
@@ -41,25 +51,33 @@ function slotStyle(slot: number) {
 }
 
 function FighterDeck({
-  items,
+  fighters,
   selectedIndex,
   onSelectIndex,
+  favorites,
+  accent,
+  motionLevel,
 }: {
-  items: React.ReactNode[];
+  fighters: AvatarDef[];
   selectedIndex: number;
   onSelectIndex: (index: number) => void;
+  favorites: PlayerAvatarId[];
+  accent: string;
+  motionLevel: MotionLevel;
 }) {
   const [dealt, setDealt] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const calm = reducedMotion || motionLevel === "calm";
 
   useEffect(() => {
     const t = setTimeout(() => setDealt(true), 60);
     return () => clearTimeout(t);
   }, []);
 
-  if (items.length === 0) return null;
+  if (fighters.length === 0) return null;
 
   return (
-    <div className="relative mx-auto w-full" style={{ height: CARD_H + 80 }}>
+    <div className="relative mx-auto w-full max-w-[min(100vw-2rem,560px)]" style={{ height: CARD_H + 80 }}>
       <motion.div
         aria-hidden
         style={{
@@ -77,12 +95,12 @@ function FighterDeck({
             "radial-gradient(ellipse at center, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 46%, transparent 70%)",
           filter: "blur(34px)",
         }}
-        animate={{ scale: [1, 1.08, 1], opacity: [0.5, 0.9, 0.5] }}
-        transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+        animate={calm ? { scale: 1, opacity: 0.5 } : { scale: [1, 1.08, 1], opacity: [0.5, 0.9, 0.5] }}
+        transition={{ repeat: calm ? 0 : Infinity, duration: 3, ease: "easeInOut" }}
       />
 
-      {items.map((item, itemIndex) => {
-        const slot = slotFor(itemIndex, selectedIndex, items.length);
+      {fighters.map((fighter, itemIndex) => {
+        const slot = slotFor(itemIndex, selectedIndex, fighters.length);
         const st = slotStyle(slot);
         const isActive = slot === 0;
         const isVisible = slot >= -2 && slot <= 2;
@@ -116,10 +134,11 @@ function FighterDeck({
                   }
             }
             transition={{
-              type: "spring",
+              type: calm ? "tween" : "spring",
               stiffness: 260,
               damping: 20,
-              delay: dealt ? 0 : dealDelay,
+              duration: calm ? 0 : undefined,
+              delay: calm || dealt ? 0 : dealDelay,
             }}
             style={{
               position: "absolute",
@@ -134,7 +153,7 @@ function FighterDeck({
               transformOrigin: "bottom center",
             }}
             whileHover={
-              !isActive && isVisible
+              !calm && !isActive && isVisible
                 ? {
                     y: st.y - 22,
                     scale: st.scale + 0.05,
@@ -146,7 +165,13 @@ function FighterDeck({
             onClick={!isActive && isVisible ? () => onSelectIndex(itemIndex) : undefined}
           >
             <TiltCard className="h-full w-full">
-              <div className="h-full w-full">{item}</div>
+              <div className="h-full w-full">
+                <FighterCard
+                  avatar={fighter}
+                  favorite={favorites.includes(fighter.id)}
+                  accent={accent}
+                />
+              </div>
             </TiltCard>
           </motion.div>
         );
@@ -155,64 +180,182 @@ function FighterDeck({
   );
 }
 
-export function AvatarPicker() {
-  const [selected, setSelected] = useReactState<PlayerAvatarId>("skullmic");
-  const [activeIndex, setActiveIndex] = useReactState(0);
+export function AvatarPicker({
+  vibe = "arcade",
+  motionLevel = "showtime",
+  filter = "all",
+  favorites = [],
+  onToggleFavorite,
+}: {
+  vibe?: VibeModeId;
+  motionLevel?: MotionLevel;
+  filter?: FighterFilter;
+  favorites?: PlayerAvatarId[];
+  onToggleFavorite?: (id: PlayerAvatarId) => void;
+}) {
+  const [selected, setSelected] = useState<PlayerAvatarId>("skullmic");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const vibeMode = VIBE_MODES[vibe];
+
+  const fighters = useMemo(
+    () => filterFighters(PLAYER_AVATARS, filter, favorites),
+    [favorites, filter],
+  );
 
   useEffect(() => {
     const id = getStoredAvatarId();
     setSelected(id);
-    const idx = PLAYER_AVATARS.findIndex((a) => a.id === id);
+    const idx = fighters.findIndex((a) => a.id === id);
     setActiveIndex(idx >= 0 ? idx : 0);
-  }, [setSelected, setActiveIndex]);
+  }, [fighters]);
+
+  useEffect(() => {
+    setActiveIndex((current) => cycleIndex(current, fighters.length));
+  }, [fighters.length]);
 
   const pickByIndex = useCallback(
     (index: number) => {
-      const avatar = PLAYER_AVATARS[index];
+      const avatar = fighters[cycleIndex(index, fighters.length)];
       if (!avatar) return;
       setSelected(avatar.id);
       setStoredAvatarId(avatar.id);
-      setActiveIndex(index);
+      setActiveIndex(cycleIndex(index, fighters.length));
     },
-    [setSelected, setActiveIndex],
+    [fighters],
   );
 
-  const cards = useMemo(
-    () => PLAYER_AVATARS.map((avatar) => <FighterCard key={avatar.id} avatar={avatar} />),
-    [],
-  );
+  const next = useCallback(() => pickByIndex(activeIndex + 1), [activeIndex, pickByIndex]);
+  const previous = useCallback(() => pickByIndex(activeIndex - 1), [activeIndex, pickByIndex]);
 
-  const active = PLAYER_AVATARS[activeIndex] ?? PLAYER_AVATARS[0]!;
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select")) return;
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        next();
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        previous();
+      }
+      if (event.key.toLowerCase() === "f") {
+        const active = fighters[activeIndex];
+        if (active) onToggleFavorite?.(active.id);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeIndex, fighters, next, onToggleFavorite, previous]);
+
+  const active = fighters[activeIndex] ?? fighters[0];
+  const activeMeta = active ? FIGHTER_CARD_META[active.id] : null;
+
+  const copyActive = async () => {
+    if (!active || !activeMeta) return;
+    const text = `${active.label} #${activeMeta.number} — ${active.tagline} (${activeMeta.rarity.toUpperCase()})`;
+    try {
+      await navigator.clipboard?.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1300);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   return (
-    <div className="relative z-10 w-full max-w-lg">
-      <div className="mb-3 flex items-center justify-center gap-3">
-        <p className="text-sm font-medium uppercase tracking-[0.15em] text-accent">Fighter cards</p>
+    <div className="relative z-10 w-full max-w-4xl">
+      <div className="mb-3 flex flex-wrap items-center justify-center gap-3">
+        <p className="text-sm font-medium uppercase tracking-[0.15em] text-accent">Draft deck</p>
         <span className="rounded-full border border-foreground/20 bg-black/40 px-2.5 py-0.5 font-body text-[9px] uppercase tracking-widest text-secondary">
-          {PLAYER_AVATARS.length} fighters
+          {fighters.length} shown / {PLAYER_AVATARS.length} fighters
         </span>
+        {filter !== "all" && (
+          <span className="rounded-full border border-white/15 bg-white/[0.08] px-2.5 py-0.5 font-body text-[9px] uppercase tracking-widest text-secondary">
+            Filter: {filter}
+          </span>
+        )}
       </div>
       <p className="mb-2 text-center font-body text-[10px] uppercase tracking-widest text-secondary/80">
-        Tap side cards to browse · thumbnails below to jump
+        Tap side cards, use arrow keys, or press F to favorite
       </p>
 
-      <FighterDeck items={cards} selectedIndex={activeIndex} onSelectIndex={pickByIndex} />
+      {active ? (
+        <>
+          <FighterDeck
+            fighters={fighters}
+            selectedIndex={activeIndex}
+            onSelectIndex={pickByIndex}
+            favorites={favorites}
+            accent={vibeMode.accent}
+            motionLevel={motionLevel}
+          />
 
-      <div className="mx-auto mt-4 max-w-md">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {PLAYER_AVATARS.map((avatar, idx) => (
-            <FighterThumb
-              key={avatar.id}
-              avatar={avatar}
-              active={avatar.id === selected}
-              onClick={() => pickByIndex(idx)}
-            />
-          ))}
+          <div className="mx-auto mt-3 flex max-w-md flex-wrap items-center justify-center gap-2">
+            <MagneticButton onClick={previous} aria-label="Previous fighter">
+              Prev
+            </MagneticButton>
+            <MagneticButton
+              onClick={() => onToggleFavorite?.(active.id)}
+              className={favorites.includes(active.id) ? "border-white/50 bg-white/20 text-white" : ""}
+              aria-label={`${favorites.includes(active.id) ? "Remove" : "Add"} ${active.label} favorite`}
+            >
+              {favorites.includes(active.id) ? "Favorited" : "Favorite"}
+            </MagneticButton>
+            <MagneticButton onClick={copyActive} aria-label={`Copy ${active.label} card summary`}>
+              {copied ? "Copied" : "Copy card"}
+            </MagneticButton>
+            <MagneticButton onClick={next} aria-label="Next fighter">
+              Next
+            </MagneticButton>
+          </div>
+
+          <div className="mx-auto mt-4 max-w-2xl">
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {fighters.map((avatar, idx) => (
+                <FighterThumb
+                  key={avatar.id}
+                  avatar={avatar}
+                  active={avatar.id === selected}
+                  onClick={() => pickByIndex(idx)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="mx-auto mt-4 max-w-xl rounded-2xl border border-white/10 bg-black/35 p-4 text-center shadow-inner">
+            <p className="font-display text-xl uppercase tracking-[0.12em] text-foreground">
+              {active.label}
+            </p>
+            <p className="mt-1 font-body text-xs text-secondary/80">{active.tagline}</p>
+            {activeMeta && (
+              <dl className="mt-4 grid grid-cols-4 gap-2 font-body text-[10px] uppercase tracking-wider text-secondary">
+                {[
+                  ["HP", activeMeta.hp],
+                  ["ATK", activeMeta.atk],
+                  ["SPD", activeMeta.spd],
+                  ["WRD", activeMeta.weird],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-xl border border-white/10 bg-white/[0.04] p-2">
+                    <dt>{label}</dt>
+                    <dd className="mt-1 text-base text-foreground">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="mx-auto max-w-lg rounded-[2rem] border border-white/10 bg-white/[0.045] p-8 text-center">
+          <p className="font-display text-2xl uppercase tracking-[0.12em] text-foreground">
+            No fighters in this tray
+          </p>
+          <p className="mt-3 font-body text-sm text-secondary">
+            Add favorites or switch filters to bring the cafeteria monsters back.
+          </p>
         </div>
-      </div>
-
-      <p className="mt-3 text-center font-display text-base text-foreground">{active.label}</p>
-      <p className="text-center font-body text-xs text-secondary/80">{active.tagline}</p>
+      )}
     </div>
   );
 }
