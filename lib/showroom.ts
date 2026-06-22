@@ -4,11 +4,13 @@ import { PLAYER_AVATARS, type AvatarDef, type PlayerAvatarId } from "@/lib/avata
 export type VibeModeId = "arcade" | "toxic" | "noir";
 export type MotionLevel = "calm" | "showtime";
 export type FighterFilter = "all" | "favorites" | "common" | "rare" | "legend";
+export type DraftStrategy = "balanced" | "brawler" | "speed" | "weird";
 
 export const SHOWROOM_STORAGE_KEYS = {
   vibe: "snack-surge-vibe",
   motion: "snack-surge-motion",
   favorites: "snack-surge-favorites",
+  draftStrategy: "snack-surge-draft-strategy",
 } as const;
 
 export const VIBE_MODES: Record<
@@ -55,12 +57,64 @@ export const HERO_BEATS = [
   "A showroom for snack-fueled monsters.",
 ] as const;
 
+export const DRAFT_STRATEGIES: Record<
+  DraftStrategy,
+  {
+    label: string;
+    shortLabel: string;
+    description: string;
+    signal: string;
+  }
+> = {
+  balanced: {
+    label: "Balanced tray",
+    shortLabel: "Balance",
+    description: "Prioritizes a resilient three-card spread with no obvious stat gap.",
+    signal: "Stable lunch rush coverage",
+  },
+  brawler: {
+    label: "Brawler rush",
+    shortLabel: "Brawl",
+    description: "Weights attack and HP for a frontline-heavy cafeteria breach.",
+    signal: "High-impact opener ready",
+  },
+  speed: {
+    label: "Speed line",
+    shortLabel: "Speed",
+    description: "Finds fast fighters that can pressure before the tray cools.",
+    signal: "First move advantage online",
+  },
+  weird: {
+    label: "Weird science",
+    shortLabel: "Weird",
+    description: "Maximizes oddity for players who want surprise effects and lore value.",
+    signal: "Anomaly density rising",
+  },
+};
+
+const DRAFT_WEIGHTS: Record<DraftStrategy, { hp: number; atk: number; spd: number; weird: number }> = {
+  balanced: { hp: 0.25, atk: 0.25, spd: 0.25, weird: 0.25 },
+  brawler: { hp: 0.28, atk: 0.4, spd: 0.12, weird: 0.2 },
+  speed: { hp: 0.12, atk: 0.23, spd: 0.45, weird: 0.2 },
+  weird: { hp: 0.12, atk: 0.16, spd: 0.22, weird: 0.5 },
+};
+
+const RARITY_BONUS: Record<"common" | "rare" | "legend", number> = {
+  common: 0,
+  rare: 4,
+  legend: 8,
+};
+
 export function isVibeMode(value: string | null): value is VibeModeId {
   return value === "arcade" || value === "toxic" || value === "noir";
 }
 
 export function isMotionLevel(value: string | null): value is MotionLevel {
   return value === "calm" || value === "showtime";
+}
+
+export function isDraftStrategy(value: string | null): value is DraftStrategy {
+  return value === "balanced" || value === "brawler" || value === "speed" || value === "weird";
 }
 
 export function normalizeFavorites(ids: readonly string[]) {
@@ -125,4 +179,61 @@ export function formatRosterStats(fighters: readonly AvatarDef[] = PLAYER_AVATAR
     ...stats,
     averageWeird: stats.total ? Math.round(stats.averageWeird / stats.total) : 0,
   };
+}
+
+export function getDraftScore(fighter: AvatarDef, strategy: DraftStrategy) {
+  const meta = FIGHTER_CARD_META[fighter.id];
+  const weights = DRAFT_WEIGHTS[strategy];
+  return Math.round(
+    meta.hp * weights.hp +
+      meta.atk * weights.atk +
+      meta.spd * weights.spd +
+      meta.weird * weights.weird +
+      RARITY_BONUS[meta.rarity],
+  );
+}
+
+export function suggestDraftLineup(
+  fighters: readonly AvatarDef[],
+  strategy: DraftStrategy,
+  limit = 3,
+) {
+  return [...fighters]
+    .sort((a, b) => {
+      const scoreDelta = getDraftScore(b, strategy) - getDraftScore(a, strategy);
+      if (scoreDelta !== 0) return scoreDelta;
+      return FIGHTER_CARD_META[a.id].number.localeCompare(FIGHTER_CARD_META[b.id].number);
+    })
+    .slice(0, Math.max(0, limit));
+}
+
+export function getLineupStats(lineup: readonly AvatarDef[]) {
+  const stats = lineup.reduce(
+    (current, fighter) => {
+      const meta = FIGHTER_CARD_META[fighter.id];
+      current.hp += meta.hp;
+      current.atk += meta.atk;
+      current.spd += meta.spd;
+      current.weird += meta.weird;
+      current.score += meta.hp + meta.atk + meta.spd + meta.weird;
+      return current;
+    },
+    { hp: 0, atk: 0, spd: 0, weird: 0, score: 0 },
+  );
+
+  return {
+    ...stats,
+    averageWeird: lineup.length ? Math.round(stats.weird / lineup.length) : 0,
+    averageScore: lineup.length ? Math.round(stats.score / lineup.length) : 0,
+  };
+}
+
+export function lineupShareText(lineup: readonly AvatarDef[], strategy: DraftStrategy) {
+  if (lineup.length === 0) {
+    return "Snack Surge draft: no fighters selected.";
+  }
+
+  const names = lineup.map((fighter) => fighter.label).join(", ");
+  const stats = getLineupStats(lineup);
+  return `Snack Surge ${DRAFT_STRATEGIES[strategy].label}: ${names}. Avg score ${stats.averageScore}, weird ${stats.averageWeird}.`;
 }

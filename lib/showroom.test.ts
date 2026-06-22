@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { PLAYER_AVATARS } from "@/lib/avatars";
 import {
+  DRAFT_STRATEGIES,
   filterFighters,
   formatRosterStats,
+  getLineupStats,
+  lineupShareText,
   parseStoredFavorites,
+  suggestDraftLineup,
   toggleFavorite,
 } from "@/lib/showroom";
 
@@ -39,5 +43,23 @@ describe("showroom feature logic", () => {
       legend: 3,
       averageWeird: 89,
     });
+  });
+
+  it("suggests deterministic draft lineups by strategy", () => {
+    const speedLine = suggestDraftLineup(PLAYER_AVATARS, "speed", 2);
+
+    expect(speedLine).toHaveLength(2);
+    expect(speedLine[0]!.id).toBe("skullbunny");
+    expect(speedLine[1]!.id).toBe("frywraith");
+    expect(suggestDraftLineup(PLAYER_AVATARS, "balanced", 0)).toEqual([]);
+  });
+
+  it("summarizes and serializes shareable lineup text", () => {
+    const lineup = suggestDraftLineup(PLAYER_AVATARS, "brawler", 3);
+    const stats = getLineupStats(lineup);
+
+    expect(stats.averageScore).toBeGreaterThan(300);
+    expect(lineupShareText(lineup, "brawler")).toContain(DRAFT_STRATEGIES.brawler.label);
+    expect(lineupShareText([], "balanced")).toBe("Snack Surge draft: no fighters selected.");
   });
 });

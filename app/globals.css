@@ -85,6 +85,27 @@ body {
   animation-delay: 70ms;
 }
 
+.shimmer-text {
+  background: linear-gradient(100deg, currentColor 0%, #ffffff 28%, currentColor 58%, rgba(255, 255, 255, 0.72) 100%);
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-text 5.5s ease-in-out infinite;
+}
+
+.ribbon-strand {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ribbon-accent, #ffffff) 84%, transparent), transparent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--ribbon-accent, #ffffff) 48%, transparent);
+  animation: ribbon-drift 8s ease-in-out infinite;
+  animation-delay: var(--ribbon-delay, 0s);
+}
+
+.ribbon-strand.motion-calm {
+  animation: none;
+  opacity: 0.28;
+}
+
 @keyframes click-spark-ring {
   from {
     opacity: 0.9;
@@ -93,6 +114,28 @@ body {
   to {
     opacity: 0;
     transform: scale(1.45);
+  }
+}
+
+@keyframes shimmer-text {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes ribbon-drift {
+  0%,
+  100% {
+    translate: -5% 0;
+    opacity: 0.25;
+  }
+  45% {
+    translate: 9% -18px;
+    opacity: 0.72;
   }
 }
 
@@ -141,6 +184,11 @@ body {
   }
 
   .fighter-card-shine {
+    animation: none;
+  }
+
+  .shimmer-text,
+  .ribbon-strand {
     animation: none;
   }
 }

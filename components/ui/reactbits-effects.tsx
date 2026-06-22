@@ -50,6 +50,60 @@ export function AuroraBackdrop({
   );
 }
 
+export function RibbonField({
+  className,
+  accent = "#7c3cff",
+  glow = "#f7f7f7",
+  motion = "showtime",
+}: {
+  className?: string;
+  accent?: string;
+  glow?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <div className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)} aria-hidden="true">
+      {[0, 1, 2, 3].map((index) => (
+        <span
+          key={index}
+          className={cn("ribbon-strand absolute h-px w-[58vw] opacity-60 blur-[0.4px]", calm && "motion-calm")}
+          style={
+            {
+              "--ribbon-accent": index % 2 === 0 ? accent : glow,
+              "--ribbon-delay": `${index * 0.55}s`,
+              top: `${18 + index * 18}%`,
+              left: `${index % 2 === 0 ? -12 : 44}%`,
+              transform: `rotate(${index % 2 === 0 ? -14 : 11}deg)`,
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
+export function ShimmerText({
+  children,
+  className,
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <span className={cn(!calm && "shimmer-text", className)}>
+      {children}
+    </span>
+  );
+}
+
 export function AnimatedReveal({
   children,
   className,
