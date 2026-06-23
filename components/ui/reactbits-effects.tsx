@@ -10,6 +10,8 @@ function shouldSoftenMotion(reduced: boolean | null, preference?: MotionPreferen
   return Boolean(reduced) || preference === "calm";
 }
 
+const SCRAMBLE_GLYPHS = "SNACKSURGE0123456789#@";
+
 export function AuroraBackdrop({
   className,
   accent = "#7c3cff",
@@ -74,6 +76,98 @@ export function AnimatedReveal({
     >
       {children}
     </m.div>
+  );
+}
+
+export function SignalText({
+  text,
+  className,
+  motion = "showtime",
+}: {
+  text: string;
+  className?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+  const [display, setDisplay] = useState(text);
+
+  useEffect(() => {
+    if (calm) {
+      setDisplay(text);
+      return;
+    }
+
+    let frame = 0;
+    let raf = 0;
+    const totalFrames = 16;
+
+    const tick = () => {
+      frame += 1;
+      const locked = Math.floor((frame / totalFrames) * text.length);
+      setDisplay(
+        text
+          .split("")
+          .map((character, index) => {
+            if (character === " " || index < locked) return character;
+            return SCRAMBLE_GLYPHS[(index + frame) % SCRAMBLE_GLYPHS.length]!;
+          })
+          .join(""),
+      );
+
+      if (frame < totalFrames) {
+        raf = window.requestAnimationFrame(tick);
+      } else {
+        setDisplay(text);
+      }
+    };
+
+    raf = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(raf);
+  }, [calm, text]);
+
+  return (
+    <span className={className} aria-label={text}>
+      <span aria-hidden="true">{display}</span>
+    </span>
+  );
+}
+
+export function RibbonField({
+  className,
+  motion = "showtime",
+  accent = "#ffffff",
+}: {
+  className?: string;
+  motion?: MotionPreference;
+  accent?: string;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <div className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)} aria-hidden="true">
+      {Array.from({ length: 5 }, (_, index) => (
+        <m.span
+          key={index}
+          className="absolute h-px w-[42rem] origin-left rounded-full opacity-50 blur-[0.5px]"
+          style={{
+            left: `${-18 + index * 14}%`,
+            top: `${20 + index * 14}%`,
+            background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+          }}
+          animate={
+            calm
+              ? { x: 0, rotate: -16 + index * 7 }
+              : {
+                  x: [0, 36, 0],
+                  rotate: [-18 + index * 7, -12 + index * 7, -18 + index * 7],
+                }
+          }
+          transition={{ repeat: calm ? 0 : Infinity, duration: 7 + index, ease: "easeInOut" }}
+        />
+      ))}
+    </div>
   );
 }
 
