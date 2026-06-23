@@ -114,6 +114,89 @@ export function SpotlightCard({
   );
 }
 
+export function ShinyText({
+  children,
+  className,
+  accent = "#ffffff",
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  accent?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <span
+      className={cn("shiny-text inline-block", !calm && "shiny-text-animated", className)}
+      style={{
+        ["--shiny-accent" as string]: accent,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function StarBorder({
+  children,
+  className,
+  accent = "#ffffff",
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  accent?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <div
+      className={cn("star-border relative overflow-hidden rounded-[2rem]", !calm && "star-border-animated", className)}
+      style={{ ["--star-accent" as string]: accent }}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function RibbonField({
+  className,
+  accent = "#ffffff",
+  glow = "#7c3cff",
+  motion = "showtime",
+}: {
+  className?: string;
+  accent?: string;
+  glow?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <div className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)} aria-hidden="true">
+      {[0, 1, 2].map((index) => (
+        <span
+          key={index}
+          className={cn("ribbon-line", !calm && "ribbon-line-animated")}
+          style={{
+            ["--ribbon-accent" as string]: index === 1 ? glow : accent,
+            ["--ribbon-y" as string]: `${18 + index * 24}%`,
+            ["--ribbon-rotate" as string]: `${index % 2 === 0 ? -8 : 7}deg`,
+            ["--ribbon-rotate-alt" as string]: `${index % 2 === 0 ? 5 : -5}deg`,
+            ["--ribbon-delay" as string]: `${index * -2.2}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function MagneticButton({
   children,
   className,
