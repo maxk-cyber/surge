@@ -114,6 +114,14 @@ export function SpotlightCard({
   );
 }
 
+export function SignalText({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span className={cn("signal-text inline-block bg-clip-text text-transparent", className)}>
+      {children}
+    </span>
+  );
+}
+
 export function MagneticButton({
   children,
   className,
