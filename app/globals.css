@@ -53,6 +53,95 @@ body {
   animation: holo-shimmer 4s ease-in-out infinite;
 }
 
+.shiny-text {
+  color: transparent;
+  background:
+    linear-gradient(
+      105deg,
+      rgba(255, 255, 255, 0.76) 0%,
+      var(--shiny-accent, #ffffff) 34%,
+      #ffffff 50%,
+      var(--shiny-accent, #ffffff) 66%,
+      rgba(255, 255, 255, 0.74) 100%
+    );
+  background-clip: text;
+  -webkit-background-clip: text;
+  background-size: 220% 100%;
+}
+
+.shiny-text-animated {
+  animation: shiny-text-sweep 4.8s ease-in-out infinite;
+}
+
+.star-border::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  z-index: 0;
+  background:
+    conic-gradient(
+      from 90deg,
+      transparent 0deg,
+      transparent 72deg,
+      color-mix(in srgb, var(--star-accent, #ffffff) 75%, transparent) 98deg,
+      transparent 124deg,
+      transparent 360deg
+    );
+  opacity: 0.75;
+}
+
+.star-border::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border-radius: inherit;
+  background: rgba(8, 8, 10, 0.82);
+}
+
+.star-border > * {
+  position: relative;
+  z-index: 1;
+}
+
+.star-border-animated::before {
+  animation: star-border-spin 7s linear infinite;
+}
+
+.ribbon-line {
+  position: absolute;
+  left: -18%;
+  top: var(--ribbon-y, 30%);
+  width: 136%;
+  height: 2px;
+  transform: rotate(var(--ribbon-rotate, 0deg));
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--ribbon-accent, #ffffff) 68%, transparent),
+      rgba(255, 255, 255, 0.92),
+      color-mix(in srgb, var(--ribbon-accent, #ffffff) 44%, transparent),
+      transparent
+    );
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--ribbon-accent, #ffffff) 50%, transparent));
+  opacity: 0.36;
+}
+
+.ribbon-line::after {
+  content: "";
+  position: absolute;
+  inset: -28px 0;
+  background: radial-gradient(ellipse at center, var(--ribbon-accent, #ffffff), transparent 66%);
+  opacity: 0.16;
+}
+
+.ribbon-line-animated {
+  animation: ribbon-scan 8.4s ease-in-out infinite;
+  animation-delay: var(--ribbon-delay, 0s);
+}
+
 @keyframes holo-shimmer {
   0%,
   100% {
@@ -60,6 +149,34 @@ body {
   }
   50% {
     background-position: 100% 50%;
+  }
+}
+
+@keyframes shiny-text-sweep {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes star-border-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes ribbon-scan {
+  0%,
+  100% {
+    transform: translate3d(-4%, 0, 0) rotate(var(--ribbon-rotate, 0deg));
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate3d(4%, -16px, 0) rotate(var(--ribbon-rotate-alt, 0deg));
+    opacity: 0.48;
   }
 }
 
@@ -141,6 +258,12 @@ body {
   }
 
   .fighter-card-shine {
+    animation: none;
+  }
+
+  .shiny-text-animated,
+  .star-border-animated::before,
+  .ribbon-line-animated {
     animation: none;
   }
 }

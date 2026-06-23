@@ -6,10 +6,11 @@ Built with ReactBits-style interaction patterns:
 
 - **DomeGallery** — draggable 3D dome of fighter portraits
 - **FluidGlass** — scrollable lens refraction over avatar art
-- **Aurora / spotlight / magnetic / click-spark effects** — purposeful motion around the showroom
+- **Aurora / ribbon / shiny text / star border / spotlight / magnetic / click-spark effects** — purposeful motion around the showroom
 - **Fighter cards** — full trading-card UI with PNG portrait art from `public/avatars`
-- **Skill controls** — vibe mode, motion intensity, rarity filters, favorites, keyboard browsing, and copy actions
-- **Iterator behavior** — rotating hero copy and cyclic card deck navigation
+- **Pack Lab** — strategy-based pack recommendations, cyclic pack reveals, favorite saves, and copyable briefings
+- **Skill controls** — vibe mode, motion intensity, rarity filters, favorites, strategy modes, keyboard browsing, and copy actions
+- **Iterator behavior** — rotating hero copy, cyclic pack reveals, and cyclic card deck navigation
 
 ## Run
 
@@ -34,12 +35,14 @@ npm run build
 | `app/page.tsx` | Main showroom page (hero + controls + dome + glass + card picker) |
 | `components/ui/DomeGallery.tsx` | React Bits dome globe |
 | `components/ui/FluidGlass.tsx` | React Bits fluid glass lens |
-| `components/ui/reactbits-effects.tsx` | Adapted aurora, reveal, spotlight, magnetic, and click-spark effects |
+| `components/ui/reactbits-effects.tsx` | Adapted aurora, ribbon, shiny text, star border, reveal, spotlight, magnetic, and click-spark effects |
+| `components/game/PackLab.tsx` | Strategy pack lab with recommendation, favorite, copy, and iterator interactions |
 | `components/game/FighterCard.tsx` | Trading card UI |
 | `components/game/AvatarPicker.tsx` | Card fan picker with filters, favorites, keyboard nav, and copy action |
 | `lib/avatars.ts` | Fighter definitions |
 | `lib/fighter-cards.ts` | Card stats / rarity metadata |
 | `lib/iterator.ts` | Reusable cyclic iterator helpers |
+| `lib/pack-lab.ts` | Strategy scoring and cyclic pack-window recommendation logic |
 | `lib/showroom.ts` | UI preference, favorite, filter, and roster helpers |
 | `public/avatars/` | PNG fighter and enemy portraits |
 | `public/assets/3d/` | GLB models for FluidGlass (`lens.glb`, etc.) |
