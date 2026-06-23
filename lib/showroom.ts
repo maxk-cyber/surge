@@ -176,13 +176,22 @@ export function buildThreatBriefings(avatar: AvatarDef) {
   ] as const;
 }
 
-export function parseShowroomSearch(search: string) {
+export function parseShowroomSearch(search: string): {
+  vibe?: VibeModeId;
+  motion?: MotionLevel;
+  filter?: FighterFilter;
+  fighter?: PlayerAvatarId;
+} {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  const vibe = params.get("vibe");
+  const motion = params.get("motion");
+  const filter = params.get("filter");
+  const fighter = params.get("fighter");
   return {
-    vibe: isVibeMode(params.get("vibe")) ? params.get("vibe")! : undefined,
-    motion: isMotionLevel(params.get("motion")) ? params.get("motion")! : undefined,
-    filter: isFighterFilter(params.get("filter")) ? params.get("filter")! : undefined,
-    fighter: isPlayerAvatarId(params.get("fighter")) ? params.get("fighter")! : undefined,
+    vibe: isVibeMode(vibe) ? vibe : undefined,
+    motion: isMotionLevel(motion) ? motion : undefined,
+    filter: isFighterFilter(filter) ? filter : undefined,
+    fighter: isPlayerAvatarId(fighter) ? fighter : undefined,
   };
 }
 
