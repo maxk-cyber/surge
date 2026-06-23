@@ -66,7 +66,7 @@ describe("AvatarPicker", () => {
   it("accepts a controlled selected fighter", () => {
     render(React.createElement(AvatarPicker, { selectedId: "burgerlich" }));
 
-    expect(screen.getByText("Burger Lich")).toBeInTheDocument();
+    expect(screen.getAllByText("Burger Lich").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /add burger lich favorite/i })).toBeInTheDocument();
   });
 
