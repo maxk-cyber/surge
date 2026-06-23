@@ -126,6 +126,55 @@ body {
   animation: aurora-pulse 11s ease-in-out infinite;
 }
 
+.ribbon-field {
+  mask-image: linear-gradient(90deg, transparent, black 14%, black 86%, transparent);
+}
+
+.ribbon-strand {
+  --ribbon-accent: #7c3cff;
+  --ribbon-delay: 0s;
+  --ribbon-top: 20%;
+  --ribbon-opacity: 0.12;
+  position: absolute;
+  left: -18%;
+  top: var(--ribbon-top);
+  height: 88px;
+  width: 136%;
+  border-radius: 999px;
+  opacity: var(--ribbon-opacity);
+  transform: rotate(-8deg);
+  background:
+    linear-gradient(90deg, transparent 0%, var(--ribbon-accent) 28%, rgba(255, 255, 255, 0.92) 50%, var(--ribbon-accent) 72%, transparent 100%),
+    repeating-linear-gradient(90deg, transparent 0 28px, rgba(255, 255, 255, 0.42) 28px 30px);
+  filter: blur(18px) saturate(150%);
+  animation: ribbon-flow 9s ease-in-out infinite;
+  animation-delay: var(--ribbon-delay);
+}
+
+.ribbon-strand:nth-child(2) {
+  transform: rotate(7deg);
+}
+
+.ribbon-strand:nth-child(3) {
+  transform: rotate(-3deg);
+}
+
+.ribbon-strand-calm {
+  animation: none;
+}
+
+@keyframes ribbon-flow {
+  0%,
+  100% {
+    translate: -4% 0;
+    scale: 1;
+  }
+  50% {
+    translate: 4% -10px;
+    scale: 1.04;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -142,6 +191,21 @@ body {
 
   .fighter-card-shine {
     animation: none;
+  }
+
+  .ribbon-strand {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fighter-card-pro,
+  .bg-white\/\[0\.045\],
+  .bg-black\/35,
+  .bg-black\/40,
+  .bg-black\/50,
+  .bg-black\/55 {
+    backdrop-filter: none !important;
   }
 }
 

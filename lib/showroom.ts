@@ -4,11 +4,26 @@ import { PLAYER_AVATARS, type AvatarDef, type PlayerAvatarId } from "@/lib/avata
 export type VibeModeId = "arcade" | "toxic" | "noir";
 export type MotionLevel = "calm" | "showtime";
 export type FighterFilter = "all" | "favorites" | "common" | "rare" | "legend";
+export type SquadSummary = {
+  count: number;
+  completion: number;
+  totalHp: number;
+  totalAtk: number;
+  totalSpd: number;
+  totalWeird: number;
+  averageWeird: number;
+  rarityMix: Record<"common" | "rare" | "legend", number>;
+  signature: string;
+  label: string;
+};
+
+export const MAX_SQUAD_SIZE = 3;
 
 export const SHOWROOM_STORAGE_KEYS = {
   vibe: "snack-surge-vibe",
   motion: "snack-surge-motion",
   favorites: "snack-surge-favorites",
+  squad: "snack-surge-squad",
 } as const;
 
 export const VIBE_MODES: Record<
@@ -68,8 +83,23 @@ export function normalizeFavorites(ids: readonly string[]) {
   return Array.from(new Set(ids.filter((id): id is PlayerAvatarId => known.has(id as PlayerAvatarId))));
 }
 
+export function normalizeSquad(ids: readonly string[], maxSize = MAX_SQUAD_SIZE) {
+  return normalizeFavorites(ids).slice(0, Math.max(0, maxSize));
+}
+
 export function toggleFavorite(favorites: readonly PlayerAvatarId[], id: PlayerAvatarId) {
   return favorites.includes(id) ? favorites.filter((favorite) => favorite !== id) : [...favorites, id];
+}
+
+export function toggleSquadMember(
+  squad: readonly PlayerAvatarId[],
+  id: PlayerAvatarId,
+  maxSize = MAX_SQUAD_SIZE,
+) {
+  const normalized = normalizeSquad(squad, maxSize);
+  if (normalized.includes(id)) return normalized.filter((member) => member !== id);
+  if (normalized.length < maxSize) return [...normalized, id];
+  return [...normalized.slice(1), id];
 }
 
 export function parseStoredFavorites(raw: string | null) {
@@ -77,6 +107,16 @@ export function parseStoredFavorites(raw: string | null) {
   try {
     const value = JSON.parse(raw);
     return Array.isArray(value) ? normalizeFavorites(value) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function parseStoredSquad(raw: string | null) {
+  if (!raw) return [];
+  try {
+    const value = JSON.parse(raw);
+    return Array.isArray(value) ? normalizeSquad(value) : [];
   } catch {
     return [];
   }
@@ -125,4 +165,55 @@ export function formatRosterStats(fighters: readonly AvatarDef[] = PLAYER_AVATAR
     ...stats,
     averageWeird: stats.total ? Math.round(stats.averageWeird / stats.total) : 0,
   };
+}
+
+export function summarizeSquad(ids: readonly PlayerAvatarId[]): SquadSummary {
+  const members = normalizeSquad(ids)
+    .map((id) => PLAYER_AVATARS.find((fighter) => fighter.id === id))
+    .filter((fighter): fighter is AvatarDef => Boolean(fighter));
+  const totals = members.reduce(
+    (summary, fighter) => {
+      const meta = FIGHTER_CARD_META[fighter.id];
+      summary.totalHp += meta.hp;
+      summary.totalAtk += meta.atk;
+      summary.totalSpd += meta.spd;
+      summary.totalWeird += meta.weird;
+      summary.rarityMix[meta.rarity] += 1;
+      return summary;
+    },
+    {
+      totalHp: 0,
+      totalAtk: 0,
+      totalSpd: 0,
+      totalWeird: 0,
+      rarityMix: { common: 0, rare: 0, legend: 0 },
+    },
+  );
+  const averageWeird = members.length ? Math.round(totals.totalWeird / members.length) : 0;
+  const signature =
+    totals.rarityMix.legend > 0 && averageWeird >= 92
+      ? "Mythic Lunch Rush"
+      : totals.totalSpd >= totals.totalHp
+        ? "Speed Tray"
+        : totals.totalAtk >= totals.totalWeird
+          ? "Brawl Combo"
+          : "Haunted Combo";
+
+  return {
+    count: members.length,
+    completion: Math.round((members.length / MAX_SQUAD_SIZE) * 100),
+    averageWeird,
+    signature,
+    label: members.length ? members.map((member) => member.label).join(" + ") : "Empty tray",
+    ...totals,
+  };
+}
+
+export function buildSquadShareText(ids: readonly PlayerAvatarId[]) {
+  const members = normalizeSquad(ids)
+    .map((id) => PLAYER_AVATARS.find((fighter) => fighter.id === id))
+    .filter((fighter): fighter is AvatarDef => Boolean(fighter));
+  if (members.length === 0) return "Snack Surge squad: Empty tray";
+  const summary = summarizeSquad(members.map((member) => member.id));
+  return `Snack Surge squad: ${summary.label} — ${summary.signature}, ${summary.averageWeird} WRD avg`;
 }

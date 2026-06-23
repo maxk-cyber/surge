@@ -8,20 +8,28 @@ import {
   AuroraBackdrop,
   ClickSpark,
   MagneticButton,
+  RibbonField,
+  SignalText,
   SpotlightCard,
 } from "@/components/ui/reactbits-effects";
+import { FighterPortrait } from "@/components/ui/FighterPortrait";
 import { avatarGalleryImages, avatarScrollImages } from "@/lib/gallery-images";
 import { useIterator } from "@/lib/iterator";
 import {
+  MAX_SQUAD_SIZE,
   HERO_BEATS,
   SHOWROOM_STORAGE_KEYS,
   VIBE_MODES,
+  buildSquadShareText,
   filterFighters,
   formatRosterStats,
   isMotionLevel,
   isVibeMode,
   parseStoredFavorites,
+  parseStoredSquad,
+  summarizeSquad,
   toggleFavorite,
+  toggleSquadMember,
   type FighterFilter,
   type MotionLevel,
   type VibeModeId,
@@ -48,10 +56,11 @@ function ShowroomDock() {
   return (
     <nav
       aria-label="Showroom sections"
-      className="fixed inset-x-0 bottom-4 z-50 mx-auto flex w-[min(94vw,560px)] items-center justify-center rounded-full border border-white/10 bg-black/55 p-1.5 shadow-[0_18px_80px_rgba(0,0,0,0.55)] backdrop-blur-2xl"
+      className="fixed inset-x-0 bottom-4 z-50 mx-auto flex w-[min(94vw,640px)] items-center justify-center rounded-full border border-white/10 bg-black/55 p-1.5 shadow-[0_18px_80px_rgba(0,0,0,0.55)] backdrop-blur-2xl"
     >
       {[
         ["Brief", "#brief"],
+        ["Squad", "#squad"],
         ["Dome", "#globe"],
         ["Glass", "#glass"],
         ["Cards", "#cards"],
@@ -59,7 +68,7 @@ function ShowroomDock() {
         <a
           key={href}
           href={href}
-          className="rounded-full px-4 py-2 font-body text-[10px] uppercase tracking-[0.2em] text-secondary transition hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          className="rounded-full px-3 py-2 font-body text-[10px] uppercase tracking-[0.2em] text-secondary transition hover:-translate-y-0.5 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:px-4"
         >
           {label}
         </a>
@@ -68,16 +77,166 @@ function ShowroomDock() {
   );
 }
 
+function SquadCockpit({
+  squad,
+  accent,
+  glow,
+  motionLevel,
+  onToggleSquad,
+}: {
+  squad: PlayerAvatarId[];
+  accent: string;
+  glow: string;
+  motionLevel: MotionLevel;
+  onToggleSquad: (id: PlayerAvatarId) => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const summary = useMemo(() => summarizeSquad(squad), [squad]);
+  const members = useMemo(
+    () =>
+      squad
+        .map((id) => PLAYER_AVATARS.find((fighter) => fighter.id === id))
+        .filter((fighter): fighter is (typeof PLAYER_AVATARS)[number] => Boolean(fighter)),
+    [squad],
+  );
+
+  const copySquad = async () => {
+    try {
+      await navigator.clipboard?.writeText(buildSquadShareText(squad));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1300);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <section id="squad" className="gallery-section relative z-10 mx-auto w-full max-w-7xl px-5 py-16 md:px-8">
+      <AnimatedReveal motion={motionLevel}>
+        <SpotlightCard className="relative overflow-hidden p-0" spotlightColor={`${accent}22`}>
+          <RibbonField accent={glow} glow={accent} motion={motionLevel} className="opacity-80" />
+          <div className="relative grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="border-b border-white/10 bg-black/45 p-6 md:p-8 lg:border-b-0 lg:border-r">
+              <p className="font-body text-[10px] uppercase tracking-[0.35em] text-secondary">
+                Skill v1 squad builder
+              </p>
+              <h2 className="mt-3 font-display text-3xl uppercase tracking-[0.11em] text-foreground md:text-5xl">
+                Build a surge squad
+              </h2>
+              <p className="mt-4 max-w-xl font-body text-sm leading-7 text-secondary/90">
+                Add up to three fighters from the draft deck. A full squad benches the oldest pick,
+                keeping the flow fast like a real card pull session.
+              </p>
+
+              <div className="mt-6">
+                <div className="mb-2 flex items-center justify-between font-body text-[10px] uppercase tracking-[0.22em] text-secondary">
+                  <span>Squad charge</span>
+                  <span>{summary.completion}%</span>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full border border-white/10 bg-black/70">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-white via-lime-200 to-fuchsia-200 transition-[width]"
+                    style={{ width: `${summary.completion}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-2">
+                <MagneticButton onClick={() => document.querySelector("#cards")?.scrollIntoView({ behavior: "smooth" })}>
+                  Draft fighters
+                </MagneticButton>
+                <MagneticButton onClick={copySquad} disabled={summary.count === 0} aria-label="Copy squad summary">
+                  {copied ? "Copied squad" : "Copy squad"}
+                </MagneticButton>
+              </div>
+            </div>
+
+            <div className="p-6 md:p-8">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {Array.from({ length: MAX_SQUAD_SIZE }, (_, index) => {
+                  const fighter = members[index];
+                  const meta = fighter ? FIGHTER_CARD_META[fighter.id] : null;
+                  return (
+                    <div
+                      key={fighter?.id ?? index}
+                      className={cn(
+                        "relative min-h-[190px] overflow-hidden rounded-[1.5rem] border p-4 text-center",
+                        fighter ? "border-white/15 bg-white/[0.07]" : "border-dashed border-white/15 bg-black/25",
+                      )}
+                    >
+                      <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border border-white/10 bg-black/45">
+                        {fighter ? (
+                          <FighterPortrait id={fighter.id} size={84} label={`${fighter.label} squad portrait`} />
+                        ) : (
+                          <span className="font-display text-3xl text-secondary/40">{index + 1}</span>
+                        )}
+                      </div>
+                      <p className="mt-3 font-display text-lg uppercase tracking-[0.1em] text-foreground">
+                        {fighter?.label ?? "Open slot"}
+                      </p>
+                      <p className="mt-1 font-body text-[10px] uppercase tracking-[0.18em] text-secondary">
+                        {meta ? `${meta.rarity} · ${meta.type}` : "Press S on a card"}
+                      </p>
+                      {fighter && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleSquad(fighter.id)}
+                          className="mt-3 rounded-full border border-white/15 px-3 py-1 font-body text-[9px] uppercase tracking-[0.18em] text-secondary transition hover:border-white/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                        >
+                          Bench
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-black/35 p-4">
+                <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+                  <div>
+                    <p className="font-body text-[10px] uppercase tracking-[0.28em] text-secondary">
+                      Current combo
+                    </p>
+                    <p className="mt-1 font-display text-2xl uppercase tracking-[0.1em] text-foreground">
+                      {summary.signature}
+                    </p>
+                    <p className="mt-1 font-body text-xs leading-5 text-secondary/80">{summary.label}</p>
+                  </div>
+                  <dl className="grid min-w-[260px] grid-cols-4 gap-2 font-body text-[10px] uppercase tracking-wider text-secondary">
+                    {[
+                      ["HP", summary.totalHp],
+                      ["ATK", summary.totalAtk],
+                      ["SPD", summary.totalSpd],
+                      ["WRD", summary.totalWeird],
+                    ].map(([label, value]) => (
+                      <div key={label} className="rounded-xl border border-white/10 bg-white/[0.04] p-2 text-center">
+                        <dt>{label}</dt>
+                        <dd className="mt-1 text-base text-foreground">{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </SpotlightCard>
+      </AnimatedReveal>
+    </section>
+  );
+}
+
 export default function CardGalleryPage() {
   const [vibe, setVibe] = useState<VibeModeId>("arcade");
   const [motionLevel, setMotionLevel] = useState<MotionLevel>("showtime");
   const [filter, setFilter] = useState<FighterFilter>("all");
   const [favorites, setFavorites] = useState<PlayerAvatarId[]>([]);
+  const [squad, setSquad] = useState<PlayerAvatarId[]>([]);
   const vibeMode = VIBE_MODES[vibe];
   const filteredCount = useMemo(
     () => filterFighters(PLAYER_AVATARS, filter, favorites).length,
     [favorites, filter],
   );
+  const squadSummary = useMemo(() => summarizeSquad(squad), [squad]);
   const hero = useIterator({
     items: HERO_BEATS,
     autoAdvanceMs: 2800,
@@ -90,6 +249,7 @@ export default function CardGalleryPage() {
     setVibe(isVibeMode(storedVibe) ? storedVibe : "arcade");
     setMotionLevel(isMotionLevel(storedMotion) ? storedMotion : "showtime");
     setFavorites(parseStoredFavorites(localStorage.getItem(SHOWROOM_STORAGE_KEYS.favorites)));
+    setSquad(parseStoredSquad(localStorage.getItem(SHOWROOM_STORAGE_KEYS.squad)));
   }, []);
 
   const chooseVibe = (nextVibe: VibeModeId) => {
@@ -110,10 +270,19 @@ export default function CardGalleryPage() {
     });
   };
 
+  const onToggleSquad = (id: PlayerAvatarId) => {
+    setSquad((current) => {
+      const next = toggleSquadMember(current, id);
+      localStorage.setItem(SHOWROOM_STORAGE_KEYS.squad, JSON.stringify(next));
+      return next;
+    });
+  };
+
   return (
     <ClickSpark motion={motionLevel}>
       <main className={cn("relative min-h-screen overflow-hidden bg-gradient-to-b pb-28", vibeMode.wash)}>
         <AuroraBackdrop accent={vibeMode.glow} glow={vibeMode.accent} motion={motionLevel} />
+        <RibbonField accent={vibeMode.glow} glow={vibeMode.accent} motion={motionLevel} className="z-[1] opacity-45" />
         <ShowroomDock />
 
         <header id="brief" className="relative z-20 mx-auto grid min-h-[92vh] w-full max-w-7xl items-center gap-10 px-5 py-20 md:grid-cols-[1.05fr_0.95fr] md:px-8">
@@ -130,7 +299,7 @@ export default function CardGalleryPage() {
                 style={{ color: vibeMode.accent }}
                 aria-live="polite"
               >
-                {hero.activeItem}
+                <SignalText text={hero.activeItem ?? HERO_BEATS[0]} motion={motionLevel} />
               </p>
               <p className="mt-6 max-w-2xl font-body text-sm leading-7 text-secondary/90 md:text-base">
                 Browse the roster as a product-grade collectible interface: spin the PNG portrait dome,
@@ -219,7 +388,7 @@ export default function CardGalleryPage() {
           {[
             ["Roster", rosterStats.total, "PNG fighters loaded from public/avatars"],
             ["Legends", rosterStats.legend, "Top-tier pulls with premium foil"],
-            ["Avg weird", rosterStats.averageWeird, "Snack Surge oddity score"],
+            ["Squad", `${squadSummary.count}/${MAX_SQUAD_SIZE}`, squadSummary.signature],
             ["Shown", filteredCount, `${filter} filter active`],
           ].map(([label, value, body], index) => (
             <AnimatedReveal key={label} delay={index * 0.05} motion={motionLevel}>
@@ -233,6 +402,14 @@ export default function CardGalleryPage() {
             </AnimatedReveal>
           ))}
         </section>
+
+        <SquadCockpit
+          squad={squad}
+          accent={vibeMode.accent}
+          glow={vibeMode.glow}
+          motionLevel={motionLevel}
+          onToggleSquad={onToggleSquad}
+        />
 
         <section id="globe" className="gallery-section relative z-10 mt-20 h-[min(88vh,920px)] w-full">
           <div className="pointer-events-none absolute inset-x-0 top-8 z-30 px-5 text-center">
@@ -342,7 +519,9 @@ export default function CardGalleryPage() {
             motionLevel={motionLevel}
             filter={filter}
             favorites={favorites}
+            squad={squad}
             onToggleFavorite={onToggleFavorite}
+            onToggleSquad={onToggleSquad}
           />
 
           <div className="mt-12 grid w-full gap-4 md:grid-cols-3">

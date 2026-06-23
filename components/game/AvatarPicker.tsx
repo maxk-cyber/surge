@@ -185,13 +185,17 @@ export function AvatarPicker({
   motionLevel = "showtime",
   filter = "all",
   favorites = [],
+  squad = [],
   onToggleFavorite,
+  onToggleSquad,
 }: {
   vibe?: VibeModeId;
   motionLevel?: MotionLevel;
   filter?: FighterFilter;
   favorites?: PlayerAvatarId[];
+  squad?: PlayerAvatarId[];
   onToggleFavorite?: (id: PlayerAvatarId) => void;
+  onToggleSquad?: (id: PlayerAvatarId) => void;
 }) {
   const [selected, setSelected] = useState<PlayerAvatarId>("skullmic");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -244,10 +248,14 @@ export function AvatarPicker({
         const active = fighters[activeIndex];
         if (active) onToggleFavorite?.(active.id);
       }
+      if (event.key.toLowerCase() === "s") {
+        const active = fighters[activeIndex];
+        if (active) onToggleSquad?.(active.id);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeIndex, fighters, next, onToggleFavorite, previous]);
+  }, [activeIndex, fighters, next, onToggleFavorite, onToggleSquad, previous]);
 
   const active = fighters[activeIndex] ?? fighters[0];
   const activeMeta = active ? FIGHTER_CARD_META[active.id] : null;
@@ -278,7 +286,7 @@ export function AvatarPicker({
         )}
       </div>
       <p className="mb-2 text-center font-body text-[10px] uppercase tracking-widest text-secondary/80">
-        Tap side cards, use arrow keys, or press F to favorite
+        Tap side cards, use arrow keys, press F to favorite, or press S to squad
       </p>
 
       {active ? (
@@ -302,6 +310,13 @@ export function AvatarPicker({
               aria-label={`${favorites.includes(active.id) ? "Remove" : "Add"} ${active.label} favorite`}
             >
               {favorites.includes(active.id) ? "Favorited" : "Favorite"}
+            </MagneticButton>
+            <MagneticButton
+              onClick={() => onToggleSquad?.(active.id)}
+              className={squad.includes(active.id) ? "border-lime-200/60 bg-lime-200/15 text-lime-50" : ""}
+              aria-label={`${squad.includes(active.id) ? "Remove" : "Add"} ${active.label} to squad`}
+            >
+              {squad.includes(active.id) ? "In squad" : "Squad"}
             </MagneticButton>
             <MagneticButton onClick={copyActive} aria-label={`Copy ${active.label} card summary`}>
               {copied ? "Copied" : "Copy card"}

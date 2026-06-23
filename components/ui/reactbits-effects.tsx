@@ -77,6 +77,74 @@ export function AnimatedReveal({
   );
 }
 
+export function SignalText({
+  text,
+  className,
+  motion = "showtime",
+}: {
+  text: string;
+  className?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  if (calm) {
+    return <span className={className}>{text}</span>;
+  }
+
+  return (
+    <span className={cn("inline-flex flex-wrap", className)} aria-label={text}>
+      {text.split("").map((letter, index) => (
+        <m.span
+          key={`${text}-${letter}-${index}`}
+          aria-hidden="true"
+          initial={{ opacity: 0, y: 8, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.32, delay: index * 0.015, ease: "easeOut" }}
+          className={letter === " " ? "w-[0.35em]" : undefined}
+        >
+          {letter === " " ? "\u00a0" : letter}
+        </m.span>
+      ))}
+    </span>
+  );
+}
+
+export function RibbonField({
+  className,
+  accent = "#7c3cff",
+  glow = "#ffffff",
+  motion = "showtime",
+}: {
+  className?: string;
+  accent?: string;
+  glow?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <div className={cn("ribbon-field pointer-events-none absolute inset-0 overflow-hidden", className)} aria-hidden="true">
+      {[0, 1, 2].map((index) => (
+        <span
+          key={index}
+          className={cn("ribbon-strand", calm && "ribbon-strand-calm")}
+          style={
+            {
+              "--ribbon-accent": index === 1 ? glow : accent,
+              "--ribbon-delay": `${index * -2.4}s`,
+              "--ribbon-top": `${18 + index * 24}%`,
+              "--ribbon-opacity": `${0.14 - index * 0.025}`,
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
 export function SpotlightCard({
   children,
   className,

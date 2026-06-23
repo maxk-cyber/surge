@@ -46,8 +46,9 @@ describe("AvatarPicker", () => {
   it("renders public PNG avatars and cycles to the next fighter", async () => {
     const user = userEvent.setup();
     const onToggleFavorite = vi.fn();
+    const onToggleSquad = vi.fn();
 
-    render(React.createElement(AvatarPicker, { favorites: [], onToggleFavorite }));
+    render(React.createElement(AvatarPicker, { favorites: [], squad: [], onToggleFavorite, onToggleSquad }));
 
     expect(screen.getByAltText("Skull Mickey portrait")).toHaveAttribute(
       "src",
@@ -60,6 +61,12 @@ describe("AvatarPicker", () => {
 
     await user.click(screen.getByRole("button", { name: /add skull bunny favorite/i }));
     expect(onToggleFavorite).toHaveBeenCalledWith("skullbunny");
+
+    await user.click(screen.getByRole("button", { name: /add skull bunny to squad/i }));
+    expect(onToggleSquad).toHaveBeenCalledWith("skullbunny");
+
+    await user.keyboard("s");
+    expect(onToggleSquad).toHaveBeenLastCalledWith("skullbunny");
   });
 
   it("shows an empty state for an empty favorites filter", () => {
