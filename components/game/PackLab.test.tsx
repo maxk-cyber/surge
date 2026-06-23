@@ -42,12 +42,6 @@ vi.mock("motion/react", () => {
 describe("PackLab", () => {
   beforeEach(() => {
     localStorage.clear();
-    Object.defineProperty(navigator, "clipboard", {
-      configurable: true,
-      value: {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      },
-    });
   });
 
   it("persists strategy changes and updates the briefing", async () => {
@@ -63,11 +57,16 @@ describe("PackLab", () => {
 
   it("copies the visible pack briefing", async () => {
     const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
 
     render(React.createElement(PackLab, { motionLevel: "calm" }));
     await user.click(screen.getByRole("button", { name: /copy pack briefing/i }));
 
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining("Balanced Menace"));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Balanced Menace"));
     expect(screen.getByRole("button", { name: /copy pack briefing/i })).toHaveTextContent(/copied/i);
   });
 
