@@ -126,6 +126,41 @@ body {
   animation: aurora-pulse 11s ease-in-out infinite;
 }
 
+.signal-text {
+  background-image: linear-gradient(90deg, #ffffff, #bef264, #c4b5fd, #ffffff);
+  background-size: 240% 100%;
+  animation: signal-sweep 4.8s ease-in-out infinite;
+}
+
+.ribbon-field {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.18), transparent 24%),
+    repeating-linear-gradient(
+      115deg,
+      rgba(255, 255, 255, 0.12) 0 1px,
+      transparent 1px 18px
+    );
+  mask-image: radial-gradient(circle at 50% 50%, black, transparent 78%);
+}
+
+.fluid-glass__lens {
+  box-shadow:
+    calc(var(--glass-chroma, 0.08) * -120px) 0 34px rgba(124, 58, 237, 0.18),
+    calc(var(--glass-chroma, 0.08) * 120px) 0 34px rgba(190, 242, 100, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -28px 55px rgba(255, 255, 255, 0.08);
+}
+
+@keyframes signal-sweep {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -141,6 +176,10 @@ body {
   }
 
   .fighter-card-shine {
+    animation: none;
+  }
+
+  .signal-text {
     animation: none;
   }
 }

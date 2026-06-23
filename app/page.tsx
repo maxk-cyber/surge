@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { AvatarPicker } from "@/components/game/AvatarPicker";
+import { SurgePackLab } from "@/components/game/SurgePackLab";
 import {
   AnimatedReveal,
   AuroraBackdrop,
@@ -52,6 +53,7 @@ function ShowroomDock() {
     >
       {[
         ["Brief", "#brief"],
+        ["Pack", "#pack"],
         ["Dome", "#globe"],
         ["Glass", "#glass"],
         ["Cards", "#cards"],
@@ -133,9 +135,9 @@ export default function CardGalleryPage() {
                 {hero.activeItem}
               </p>
               <p className="mt-6 max-w-2xl font-body text-sm leading-7 text-secondary/90 md:text-base">
-                Browse the roster as a product-grade collectible interface: spin the PNG portrait dome,
-                inspect the refraction wall, filter rarity, favorite your fighters, and copy shareable
-                card summaries from the deck.
+                Browse the roster as a product-grade collectible interface: open stat-driven packs,
+                spin the generated portrait dome, inspect the liquid glass wall, filter rarity,
+                favorite your fighters, and copy shareable card summaries from the deck.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -217,7 +219,7 @@ export default function CardGalleryPage() {
 
         <section className="relative z-10 mx-auto grid w-full max-w-7xl gap-4 px-5 md:grid-cols-4 md:px-8">
           {[
-            ["Roster", rosterStats.total, "PNG fighters loaded from public/avatars"],
+            ["Roster", rosterStats.total, "Generated portraits with zero missing asset risk"],
             ["Legends", rosterStats.legend, "Top-tier pulls with premium foil"],
             ["Avg weird", rosterStats.averageWeird, "Snack Surge oddity score"],
             ["Shown", filteredCount, `${filter} filter active`],
@@ -234,10 +236,12 @@ export default function CardGalleryPage() {
           ))}
         </section>
 
+        <SurgePackLab favorites={favorites} vibe={vibe} motionLevel={motionLevel} />
+
         <section id="globe" className="gallery-section relative z-10 mt-20 h-[min(88vh,920px)] w-full">
           <div className="pointer-events-none absolute inset-x-0 top-8 z-30 px-5 text-center">
             <p className="font-body text-[10px] uppercase tracking-[0.35em] text-secondary">
-              ReactBits DomeGallery · Public PNG atlas
+              ReactBits DomeGallery · generated portrait atlas
             </p>
             <h2 className="mt-2 font-display text-3xl uppercase tracking-[0.12em] text-foreground md:text-5xl">
               Spin the cafeteria sphere
@@ -266,15 +270,15 @@ export default function CardGalleryPage() {
             <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
               <div>
                 <p className="font-body text-[10px] uppercase tracking-[0.35em] text-secondary">
-                  FluidGlass · GLB lens assets
+                  FluidGlass · CSS liquid lens
                 </p>
                 <h2 className="mt-2 font-display text-3xl uppercase tracking-[0.1em] md:text-5xl">
                   Refraction wall
                 </h2>
               </div>
               <p className="max-w-md font-body text-xs leading-6 text-secondary">
-                Scroll inside the panel and move your pointer: the lens bends real checked-in PNG art,
-                giving the roster a tactile premium preview without hiding the cards.
+                Scroll inside the panel and move your pointer: the lens responds to the generated
+                fighter atlas, giving the roster a tactile premium preview without external 3D files.
               </p>
             </div>
           </AnimatedReveal>
