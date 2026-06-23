@@ -43,23 +43,31 @@ describe("AvatarPicker", () => {
     localStorage.clear();
   });
 
-  it("renders public PNG avatars and cycles to the next fighter", async () => {
+  it("renders generated avatar art and cycles to the next fighter", async () => {
     const user = userEvent.setup();
     const onToggleFavorite = vi.fn();
+    const onSelectedChange = vi.fn();
 
-    render(React.createElement(AvatarPicker, { favorites: [], onToggleFavorite }));
+    render(React.createElement(AvatarPicker, { favorites: [], onToggleFavorite, onSelectedChange }));
 
-    expect(screen.getByAltText("Skull Mickey portrait")).toHaveAttribute(
-      "src",
-      "/avatars/skullmic.png",
+    expect(screen.getByAltText("Skull Mickey portrait").getAttribute("src")).toMatch(
+      /^data:image\/svg\+xml;charset=utf-8,/,
     );
 
     await user.click(screen.getByRole("button", { name: /next fighter/i }));
 
     expect(localStorage.getItem("snack-surge-avatar")).toBe("skullbunny");
+    expect(onSelectedChange).toHaveBeenCalledWith("skullbunny");
 
     await user.click(screen.getByRole("button", { name: /add skull bunny favorite/i }));
     expect(onToggleFavorite).toHaveBeenCalledWith("skullbunny");
+  });
+
+  it("accepts a controlled selected fighter", () => {
+    render(React.createElement(AvatarPicker, { selectedId: "burgerlich" }));
+
+    expect(screen.getAllByText("Burger Lich").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /add burger lich favorite/i })).toBeInTheDocument();
   });
 
   it("shows an empty state for an empty favorites filter", () => {

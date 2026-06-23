@@ -4,6 +4,7 @@ import { PLAYER_AVATARS, type AvatarDef, type PlayerAvatarId } from "@/lib/avata
 export type VibeModeId = "arcade" | "toxic" | "noir";
 export type MotionLevel = "calm" | "showtime";
 export type FighterFilter = "all" | "favorites" | "common" | "rare" | "legend";
+export type ShowroomSectionId = "brief" | "recipe" | "globe" | "glass" | "cards";
 
 export const SHOWROOM_STORAGE_KEYS = {
   vibe: "snack-surge-vibe",
@@ -55,12 +56,34 @@ export const HERO_BEATS = [
   "A showroom for snack-fueled monsters.",
 ] as const;
 
+const SECTION_LABELS: Record<ShowroomSectionId, string> = {
+  brief: "Brief",
+  recipe: "Recipe",
+  globe: "Dome",
+  glass: "Glass",
+  cards: "Cards",
+};
+
+export const SHOWROOM_SECTIONS = (Object.keys(SECTION_LABELS) as ShowroomSectionId[]).map((id) => ({
+  id,
+  label: SECTION_LABELS[id],
+  href: `#${id}`,
+}));
+
 export function isVibeMode(value: string | null): value is VibeModeId {
   return value === "arcade" || value === "toxic" || value === "noir";
 }
 
 export function isMotionLevel(value: string | null): value is MotionLevel {
   return value === "calm" || value === "showtime";
+}
+
+export function isFighterFilter(value: string | null): value is FighterFilter {
+  return value === "all" || value === "favorites" || value === "common" || value === "rare" || value === "legend";
+}
+
+export function isPlayerAvatarId(value: string | null): value is PlayerAvatarId {
+  return Boolean(value && PLAYER_AVATARS.some((avatar) => avatar.id === value));
 }
 
 export function normalizeFavorites(ids: readonly string[]) {
@@ -125,4 +148,66 @@ export function formatRosterStats(fighters: readonly AvatarDef[] = PLAYER_AVATAR
     ...stats,
     averageWeird: stats.total ? Math.round(stats.averageWeird / stats.total) : 0,
   };
+}
+
+export function createCardSummary(avatar: AvatarDef) {
+  const meta = FIGHTER_CARD_META[avatar.id];
+  return `${avatar.label} #${meta.number} - ${avatar.tagline} (${meta.rarity.toUpperCase()} / WRD ${meta.weird})`;
+}
+
+export function buildThreatBriefings(avatar: AvatarDef) {
+  const meta = FIGHTER_CARD_META[avatar.id];
+  return [
+    {
+      label: "First bite",
+      title: `${avatar.label} enters through the tray line`,
+      body: `${meta.type} pressure with ${meta.hp} HP and a ${meta.rarity} pull rate.`,
+    },
+    {
+      label: "Counter play",
+      title: `Exploit the ${meta.spd >= meta.atk ? "speed burst" : "attack windup"}`,
+      body: `ATK ${meta.atk}, SPD ${meta.spd}, WRD ${meta.weird}. Keep the spotlight on readable stats before the jump scare lands.`,
+    },
+    {
+      label: "Foil tell",
+      title: meta.flavor,
+      body: `Signature line: ${avatar.tagline}. Favorite it, copy it, or share the exact cabinet state.`,
+    },
+  ] as const;
+}
+
+export function parseShowroomSearch(search: string): {
+  vibe?: VibeModeId;
+  motion?: MotionLevel;
+  filter?: FighterFilter;
+  fighter?: PlayerAvatarId;
+} {
+  const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  const vibe = params.get("vibe");
+  const motion = params.get("motion");
+  const filter = params.get("filter");
+  const fighter = params.get("fighter");
+  return {
+    vibe: isVibeMode(vibe) ? vibe : undefined,
+    motion: isMotionLevel(motion) ? motion : undefined,
+    filter: isFighterFilter(filter) ? filter : undefined,
+    fighter: isPlayerAvatarId(fighter) ? fighter : undefined,
+  };
+}
+
+export function updateShowroomSearch(
+  currentSearch: string,
+  state: {
+    vibe: VibeModeId;
+    motion: MotionLevel;
+    filter: FighterFilter;
+    fighter: PlayerAvatarId;
+  },
+) {
+  const params = new URLSearchParams(currentSearch.startsWith("?") ? currentSearch.slice(1) : currentSearch);
+  params.set("vibe", state.vibe);
+  params.set("motion", state.motion);
+  params.set("filter", state.filter);
+  params.set("fighter", state.fighter);
+  return `?${params.toString()}`;
 }

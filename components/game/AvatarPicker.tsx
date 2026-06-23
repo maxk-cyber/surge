@@ -15,6 +15,7 @@ import {
 import { FIGHTER_CARD_META } from "@/lib/fighter-cards";
 import { cycleIndex } from "@/lib/iterator";
 import {
+  createCardSummary,
   filterFighters,
   type FighterFilter,
   type MotionLevel,
@@ -186,14 +187,18 @@ export function AvatarPicker({
   filter = "all",
   favorites = [],
   onToggleFavorite,
+  selectedId,
+  onSelectedChange,
 }: {
   vibe?: VibeModeId;
   motionLevel?: MotionLevel;
   filter?: FighterFilter;
   favorites?: PlayerAvatarId[];
   onToggleFavorite?: (id: PlayerAvatarId) => void;
+  selectedId?: PlayerAvatarId;
+  onSelectedChange?: (id: PlayerAvatarId) => void;
 }) {
-  const [selected, setSelected] = useState<PlayerAvatarId>("skullmic");
+  const [selected, setSelected] = useState<PlayerAvatarId>(selectedId ?? "skullmic");
   const [activeIndex, setActiveIndex] = useState(0);
   const [copied, setCopied] = useState(false);
   const vibeMode = VIBE_MODES[vibe];
@@ -204,11 +209,11 @@ export function AvatarPicker({
   );
 
   useEffect(() => {
-    const id = getStoredAvatarId();
+    const id = selectedId ?? getStoredAvatarId();
     setSelected(id);
     const idx = fighters.findIndex((a) => a.id === id);
     setActiveIndex(idx >= 0 ? idx : 0);
-  }, [fighters]);
+  }, [fighters, selectedId]);
 
   useEffect(() => {
     setActiveIndex((current) => cycleIndex(current, fighters.length));
@@ -220,9 +225,10 @@ export function AvatarPicker({
       if (!avatar) return;
       setSelected(avatar.id);
       setStoredAvatarId(avatar.id);
+      onSelectedChange?.(avatar.id);
       setActiveIndex(cycleIndex(index, fighters.length));
     },
-    [fighters],
+    [fighters, onSelectedChange],
   );
 
   const next = useCallback(() => pickByIndex(activeIndex + 1), [activeIndex, pickByIndex]);
@@ -254,7 +260,7 @@ export function AvatarPicker({
 
   const copyActive = async () => {
     if (!active || !activeMeta) return;
-    const text = `${active.label} #${activeMeta.number} — ${active.tagline} (${activeMeta.rarity.toUpperCase()})`;
+    const text = createCardSummary(active);
     try {
       await navigator.clipboard?.writeText(text);
       setCopied(true);
@@ -317,7 +323,7 @@ export function AvatarPicker({
                 <FighterThumb
                   key={avatar.id}
                   avatar={avatar}
-                  active={avatar.id === selected}
+                  active={avatar.id === active.id || avatar.id === selected}
                   onClick={() => pickByIndex(idx)}
                 />
               ))}
