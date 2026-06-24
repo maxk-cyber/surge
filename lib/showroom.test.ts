@@ -46,8 +46,8 @@ describe("showroom feature logic", () => {
 
   it("recommends strategy-specific lineups from fighter stats", () => {
     expect(recommendFightersForStrategy(PLAYER_AVATARS, "speedrun", [], 3).map((fighter) => fighter.id)).toEqual([
-      "frywraith",
       "skullbunny",
+      "frywraith",
       "donutcreep",
     ]);
 
