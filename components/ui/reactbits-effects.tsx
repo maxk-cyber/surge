@@ -50,6 +50,79 @@ export function AuroraBackdrop({
   );
 }
 
+export function PlasmaWaveBackdrop({
+  className,
+  accent = "#7c3cff",
+  glow = "#f7f7f7",
+  motion = "showtime",
+}: {
+  className?: string;
+  accent?: string;
+  glow?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <div
+      className={cn("plasma-wave pointer-events-none absolute inset-0 overflow-hidden", calm && "plasma-wave-calm", className)}
+      style={{
+        ["--plasma-accent" as string]: accent,
+        ["--plasma-glow" as string]: glow,
+      }}
+      aria-hidden="true"
+    >
+      <span />
+      <span />
+      <span />
+    </div>
+  );
+}
+
+export function ShinyText({
+  children,
+  className,
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <span className={cn("shiny-text", calm && "shiny-text-calm", className)}>
+      {children}
+    </span>
+  );
+}
+
+export function RibbonBadge({
+  children,
+  className,
+  accent = "#ffffff",
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  accent?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <span
+      className={cn("ribbon-badge relative inline-flex items-center justify-center", calm && "ribbon-badge-calm", className)}
+      style={{ ["--ribbon-accent" as string]: accent }}
+    >
+      {children}
+    </span>
+  );
+}
+
 export function AnimatedReveal({
   children,
   className,

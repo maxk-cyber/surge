@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { AvatarPicker } from "@/components/game/AvatarPicker";
+import { PackRitual } from "@/components/game/PackRitual";
 import {
   AnimatedReveal,
   AuroraBackdrop,
@@ -52,6 +53,7 @@ function ShowroomDock() {
     >
       {[
         ["Brief", "#brief"],
+        ["Pack", "#pack"],
         ["Dome", "#globe"],
         ["Glass", "#glass"],
         ["Cards", "#cards"],
@@ -233,6 +235,12 @@ export default function CardGalleryPage() {
             </AnimatedReveal>
           ))}
         </section>
+
+        <PackRitual
+          motionLevel={motionLevel}
+          favorites={favorites}
+          onToggleFavorite={onToggleFavorite}
+        />
 
         <section id="globe" className="gallery-section relative z-10 mt-20 h-[min(88vh,920px)] w-full">
           <div className="pointer-events-none absolute inset-x-0 top-8 z-30 px-5 text-center">
