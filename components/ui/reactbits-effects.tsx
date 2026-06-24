@@ -217,3 +217,108 @@ export function ClickSpark({
     </div>
   );
 }
+
+export function ShinyText({
+  children,
+  className,
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <span
+      className={cn(
+        "inline-block bg-[linear-gradient(110deg,rgba(255,255,255,0.55),#fff,rgba(255,255,255,0.42))] bg-[length:220%_100%] bg-clip-text text-transparent",
+        !calm && "animate-shiny-text",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function StarBorder({
+  children,
+  className,
+  innerClassName,
+  accent = "#ffffff",
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  innerClassName?: string;
+  accent?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-[2rem] p-px shadow-[0_24px_100px_rgba(0,0,0,0.45)]",
+        className,
+      )}
+      style={{
+        background: `conic-gradient(from 90deg, transparent, ${accent}44, rgba(255,255,255,0.75), ${accent}44, transparent)`,
+      }}
+    >
+      <span
+        className={cn(
+          "pointer-events-none absolute -inset-1 opacity-70 blur-xl",
+          !calm && "animate-star-border",
+        )}
+        style={{
+          background: `conic-gradient(from 0deg, transparent 0 18%, ${accent}80 30%, transparent 42% 58%, rgba(255,255,255,0.7) 72%, transparent 84%)`,
+        }}
+        aria-hidden="true"
+      />
+      <div className={cn("relative rounded-[calc(2rem-1px)] bg-black/72 backdrop-blur-xl", innerClassName)}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function RibbonField({
+  className,
+  accent = "#7c3cff",
+  glow = "#ffffff",
+  motion = "showtime",
+}: {
+  className?: string;
+  accent?: string;
+  glow?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <div className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)} aria-hidden="true">
+      {Array.from({ length: 5 }, (_, index) => (
+        <span
+          key={index}
+          className={cn(
+            "absolute h-px w-[46rem] origin-left rounded-full opacity-45 blur-[0.5px]",
+            !calm && "animate-ribbon-field",
+          )}
+          style={{
+            left: `${-22 + index * 19}%`,
+            top: `${16 + index * 15}%`,
+            transform: `rotate(${-22 + index * 11}deg)`,
+            animationDelay: `${index * -1.7}s`,
+            background: `linear-gradient(90deg, transparent, ${index % 2 ? glow : accent}, transparent)`,
+            boxShadow: `0 0 28px ${index % 2 ? glow : accent}`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
