@@ -41,12 +41,6 @@ vi.mock("motion/react", () => {
 describe("PackOpening", () => {
   beforeEach(() => {
     localStorage.clear();
-    Object.defineProperty(navigator, "clipboard", {
-      configurable: true,
-      value: {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      },
-    });
   });
 
   it("reveals pack cards and updates progress", async () => {
@@ -78,6 +72,7 @@ describe("PackOpening", () => {
 
   it("favorites the active pull and copies revealed pulls", async () => {
     const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
     const onToggleFavorite = vi.fn();
     render(React.createElement(PackOpening, { motionLevel: "calm", onToggleFavorite }));
 
@@ -86,6 +81,6 @@ describe("PackOpening", () => {
     await user.click(screen.getByRole("button", { name: /copy pulls/i }));
 
     expect(onToggleFavorite).toHaveBeenCalledTimes(1);
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining("1."));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("1."));
   });
 });
