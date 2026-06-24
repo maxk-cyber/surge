@@ -126,6 +126,148 @@ body {
   animation: aurora-pulse 11s ease-in-out infinite;
 }
 
+.plasma-wave {
+  background:
+    radial-gradient(circle at 18% 24%, color-mix(in srgb, var(--plasma-glow, #7c3cff) 42%, transparent), transparent 28%),
+    radial-gradient(circle at 78% 18%, color-mix(in srgb, var(--plasma-accent, #ffffff) 24%, transparent), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%, rgba(255, 255, 255, 0.05));
+}
+
+.plasma-wave span {
+  position: absolute;
+  inset: auto;
+  width: 42rem;
+  height: 42rem;
+  border-radius: 999px;
+  filter: blur(34px);
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  background: conic-gradient(
+    from 90deg,
+    transparent,
+    color-mix(in srgb, var(--plasma-glow, #7c3cff) 48%, transparent),
+    transparent,
+    color-mix(in srgb, var(--plasma-accent, #ffffff) 34%, transparent),
+    transparent
+  );
+  animation: plasma-float 14s ease-in-out infinite;
+}
+
+.plasma-wave span:nth-child(1) {
+  left: -14rem;
+  top: -18rem;
+}
+
+.plasma-wave span:nth-child(2) {
+  right: -18rem;
+  top: 20%;
+  animation-delay: -5s;
+  animation-duration: 18s;
+}
+
+.plasma-wave span:nth-child(3) {
+  bottom: -20rem;
+  left: 22%;
+  animation-delay: -9s;
+  animation-duration: 22s;
+}
+
+.plasma-wave-calm span {
+  animation: none;
+}
+
+@keyframes plasma-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(8%, -6%, 0) rotate(28deg) scale(1.12);
+  }
+}
+
+.shiny-text {
+  color: transparent;
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.72), #fff 42%, rgba(255, 255, 255, 0.65) 52%),
+    linear-gradient(90deg, currentColor, currentColor);
+  background-clip: text;
+  background-size: 220% 100%;
+  animation: shiny-scan 3.8s ease-in-out infinite;
+}
+
+.shiny-text-calm {
+  color: inherit;
+  background: none;
+  animation: none;
+}
+
+@keyframes shiny-scan {
+  0%,
+  100% {
+    background-position: 180% 50%;
+  }
+  48%,
+  58% {
+    background-position: 0% 50%;
+  }
+}
+
+.ribbon-badge {
+  min-height: 2.1rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--ribbon-accent, #ffffff) 42%, transparent);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--ribbon-accent, #ffffff) 18%, transparent), transparent),
+    rgba(0, 0, 0, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 16px 48px color-mix(in srgb, var(--ribbon-accent, #ffffff) 12%, transparent);
+  overflow: hidden;
+}
+
+.ribbon-badge::before,
+.ribbon-badge::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 1rem;
+  height: 1rem;
+  border: inherit;
+  background: rgba(0, 0, 0, 0.52);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.ribbon-badge::before {
+  left: -0.56rem;
+}
+
+.ribbon-badge::after {
+  right: -0.56rem;
+}
+
+.ribbon-badge:not(.ribbon-badge-calm)::before {
+  animation: ribbon-glint 2.8s ease-in-out infinite;
+}
+
+@keyframes ribbon-glint {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.pack-card-back {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 34%, rgba(255, 255, 255, 0.1)),
+    radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--pack-accent, #ffffff) 22%, transparent), transparent 42%),
+    #111;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -142,6 +284,12 @@ body {
 
   .fighter-card-shine {
     animation: none;
+  }
+
+  .plasma-wave span,
+  .shiny-text,
+  .ribbon-badge::before {
+    animation: none !important;
   }
 }
 
