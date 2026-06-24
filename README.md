@@ -5,11 +5,12 @@ A standalone premium showcase of Snack Surge fighter cards and avatars — **no 
 Built with ReactBits-style interaction patterns:
 
 - **DomeGallery** — draggable 3D dome of fighter portraits
-- **FluidGlass** — scrollable lens refraction over avatar art
-- **Aurora / spotlight / magnetic / click-spark effects** — purposeful motion around the showroom
-- **Fighter cards** — full trading-card UI with PNG portrait art from `public/avatars`
-- **Skill controls** — vibe mode, motion intensity, rarity filters, favorites, keyboard browsing, and copy actions
-- **Iterator behavior** — rotating hero copy and cyclic card deck navigation
+- **FluidGlass** — CSS liquid lens refraction over generated avatar art
+- **Aurora / spotlight / magnetic / click-spark / shiny text / star-border effects** — purposeful motion around the showroom
+- **Pack Opening** — five-card reveal ritual with pack vibes, progress, favorites, and copy actions
+- **Fighter cards** — full trading-card UI with generated vector portrait art
+- **Skill controls** — vibe mode, pack vibe, motion intensity, rarity filters, favorites, keyboard browsing, and copy actions
+- **Iterator behavior** — rotating hero copy, cyclic pack spotlight browsing, and cyclic card deck navigation
 
 ## Run
 
@@ -31,18 +32,19 @@ npm run build
 
 | Path | Purpose |
 |------|---------|
-| `app/page.tsx` | Main showroom page (hero + controls + dome + glass + card picker) |
+| `app/page.tsx` | Main showroom page (hero + controls + pack + dome + glass + card picker) |
 | `components/ui/DomeGallery.tsx` | React Bits dome globe |
-| `components/ui/FluidGlass.tsx` | React Bits fluid glass lens |
-| `components/ui/reactbits-effects.tsx` | Adapted aurora, reveal, spotlight, magnetic, and click-spark effects |
+| `components/ui/FluidGlass.tsx` | React Bits-style CSS liquid glass lens |
+| `components/ui/reactbits-effects.tsx` | Adapted aurora, reveal, spotlight, magnetic, shiny text, star-border, and click-spark effects |
 | `components/game/FighterCard.tsx` | Trading card UI |
 | `components/game/AvatarPicker.tsx` | Card fan picker with filters, favorites, keyboard nav, and copy action |
+| `components/game/PackOpening.tsx` | Pack reveal cockpit with vibe modes, progress, favorites, and copy action |
+| `lib/avatar-assets.ts` | Generated SVG data-URI portrait atlas |
 | `lib/avatars.ts` | Fighter definitions |
 | `lib/fighter-cards.ts` | Card stats / rarity metadata |
 | `lib/iterator.ts` | Reusable cyclic iterator helpers |
+| `lib/pack-opening.ts` | Pack lineup, spotlight, progress, and share helpers |
 | `lib/showroom.ts` | UI preference, favorite, filter, and roster helpers |
-| `public/avatars/` | PNG fighter and enemy portraits |
-| `public/assets/3d/` | GLB models for FluidGlass (`lens.glb`, etc.) |
 
 ## GitHub Pages
 
@@ -61,7 +63,7 @@ If Pages is not already enabled in repository settings, set **Settings → Pages
 
 ## Notes
 
-- Portraits use PNG assets from `public/avatars/`.
-- Dome / glass sections use the same PNG paths via `lib/gallery-images.ts`.
-- FluidGlass uses GLB files from `public/assets/3d/`.
+- Portraits are generated as SVG data URLs in `lib/avatar-assets.ts`.
+- Dome / glass sections use the same generated atlas via `lib/gallery-images.ts`.
+- FluidGlass is DOM/CSS based and does not require GLB assets.
 - Motion respects `prefers-reduced-motion` and the in-app Calm/Showtime control.

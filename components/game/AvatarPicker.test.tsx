@@ -43,15 +43,14 @@ describe("AvatarPicker", () => {
     localStorage.clear();
   });
 
-  it("renders public PNG avatars and cycles to the next fighter", async () => {
+  it("renders generated vector avatars and cycles to the next fighter", async () => {
     const user = userEvent.setup();
     const onToggleFavorite = vi.fn();
 
     render(React.createElement(AvatarPicker, { favorites: [], onToggleFavorite }));
 
-    expect(screen.getByAltText("Skull Mickey portrait")).toHaveAttribute(
-      "src",
-      "/avatars/skullmic.png",
+    expect(screen.getByAltText("Skull Mickey portrait").getAttribute("src")).toContain(
+      "data:image/svg+xml",
     );
 
     await user.click(screen.getByRole("button", { name: /next fighter/i }));
