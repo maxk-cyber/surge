@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { PLAYER_AVATARS } from "@/lib/avatars";
 import {
+  buildCardSummary,
+  buildLineupBrief,
   filterFighters,
   formatRosterStats,
   parseStoredFavorites,
+  recommendFightersForStrategy,
   toggleFavorite,
 } from "@/lib/showroom";
 
@@ -39,5 +42,26 @@ describe("showroom feature logic", () => {
       legend: 3,
       averageWeird: 89,
     });
+  });
+
+  it("recommends strategy-specific lineups from fighter stats", () => {
+    expect(recommendFightersForStrategy(PLAYER_AVATARS, "speedrun", [], 3).map((fighter) => fighter.id)).toEqual([
+      "frywraith",
+      "skullbunny",
+      "donutcreep",
+    ]);
+
+    expect(recommendFightersForStrategy(PLAYER_AVATARS, "bulwark", [], 3).map((fighter) => fighter.id)).toEqual([
+      "burgerlich",
+      "gaperskull",
+      "skullmic",
+    ]);
+  });
+
+  it("boosts favorites and builds shareable lineup text", () => {
+    const chaos = recommendFightersForStrategy(PLAYER_AVATARS, "chaos", ["ramenlich"], 3);
+    expect(chaos.map((fighter) => fighter.id)).toContain("ramenlich");
+    expect(buildCardSummary(PLAYER_AVATARS[0]!)).toBe("Skull Mickey #001 - Ear-resistible menace (LEGEND)");
+    expect(buildLineupBrief("chaos", chaos)).toContain("Snack Surge Contraband Chaos:");
   });
 });

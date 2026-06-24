@@ -50,6 +50,63 @@ export function AuroraBackdrop({
   );
 }
 
+export function PlasmaWave({
+  className,
+  colors = ["#7c3cff", "#06b6d4"],
+  motion = "showtime",
+}: {
+  className?: string;
+  colors?: [string, string];
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <div
+      className={cn("plasma-wave pointer-events-none absolute inset-0 overflow-hidden", calm && "plasma-wave-calm", className)}
+      style={{
+        ["--plasma-a" as string]: colors[0],
+        ["--plasma-b" as string]: colors[1],
+      }}
+      aria-hidden="true"
+    >
+      <span />
+      <span />
+      <span />
+    </div>
+  );
+}
+
+export function ShinyText({
+  children,
+  className,
+  color = "#b5b5b5",
+  shineColor = "#ffffff",
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  color?: string;
+  shineColor?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <span
+      className={cn("shiny-text inline-block", calm && "shiny-text-calm", className)}
+      style={{
+        ["--shiny-color" as string]: color,
+        ["--shiny-highlight" as string]: shineColor,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
 export function AnimatedReveal({
   children,
   className,
@@ -111,6 +168,56 @@ export function SpotlightCard({
       <div className="pointer-events-none absolute inset-px rounded-[calc(2rem-1px)] border border-white/10" />
       {children}
     </article>
+  );
+}
+
+export function DockNav({
+  items,
+  className,
+  motion = "showtime",
+}: {
+  items: { label: string; href: string; icon: string }[];
+  className?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <nav
+      aria-label="Showroom sections"
+      className={cn(
+        "fixed inset-x-0 bottom-4 z-50 mx-auto flex w-[min(94vw,640px)] items-end justify-center gap-1.5 rounded-full border border-white/10 bg-black/60 p-1.5 shadow-[0_18px_80px_rgba(0,0,0,0.55)] backdrop-blur-2xl",
+        className,
+      )}
+      onMouseMove={(event) => {
+        if (calm) return;
+        const nav = event.currentTarget;
+        const rect = nav.getBoundingClientRect();
+        nav.style.setProperty("--dock-x", `${event.clientX - rect.left}px`);
+      }}
+    >
+      {items.map((item) => (
+        <a
+          key={item.href}
+          href={item.href}
+          className={cn(
+            "dock-item group relative flex h-11 min-w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.055] px-3 font-body text-[10px] uppercase tracking-[0.16em] text-secondary outline-none transition",
+            "hover:border-white/35 hover:bg-white/[0.14] hover:text-foreground focus-visible:ring-2 focus-visible:ring-white/70",
+            calm && "dock-item-calm",
+          )}
+          aria-label={item.label}
+        >
+          <span className="text-sm" aria-hidden="true">
+            {item.icon}
+          </span>
+          <span className="ml-2 hidden sm:inline">{item.label}</span>
+          <span className="pointer-events-none absolute -top-8 left-1/2 hidden -translate-x-1/2 rounded-full border border-white/10 bg-black/80 px-2 py-1 text-[9px] text-foreground opacity-0 shadow-xl transition group-hover:block group-hover:opacity-100 group-focus-visible:block group-focus-visible:opacity-100 sm:hidden">
+            {item.label}
+          </span>
+        </a>
+      ))}
+    </nav>
   );
 }
 

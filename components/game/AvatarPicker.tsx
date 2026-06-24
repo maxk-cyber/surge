@@ -15,6 +15,7 @@ import {
 import { FIGHTER_CARD_META } from "@/lib/fighter-cards";
 import { cycleIndex } from "@/lib/iterator";
 import {
+  buildCardSummary,
   filterFighters,
   type FighterFilter,
   type MotionLevel,
@@ -254,7 +255,7 @@ export function AvatarPicker({
 
   const copyActive = async () => {
     if (!active || !activeMeta) return;
-    const text = `${active.label} #${activeMeta.number} — ${active.tagline} (${activeMeta.rarity.toUpperCase()})`;
+    const text = buildCardSummary(active);
     try {
       await navigator.clipboard?.writeText(text);
       setCopied(true);

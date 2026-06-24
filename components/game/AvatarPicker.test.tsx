@@ -49,9 +49,8 @@ describe("AvatarPicker", () => {
 
     render(React.createElement(AvatarPicker, { favorites: [], onToggleFavorite }));
 
-    expect(screen.getByAltText("Skull Mickey portrait")).toHaveAttribute(
-      "src",
-      "/avatars/skullmic.png",
+    expect(screen.getByAltText("Skull Mickey portrait").getAttribute("src")).toMatch(
+      /^data:image\/svg\+xml/,
     );
 
     await user.click(screen.getByRole("button", { name: /next fighter/i }));

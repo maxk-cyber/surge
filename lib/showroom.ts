@@ -4,11 +4,13 @@ import { PLAYER_AVATARS, type AvatarDef, type PlayerAvatarId } from "@/lib/avata
 export type VibeModeId = "arcade" | "toxic" | "noir";
 export type MotionLevel = "calm" | "showtime";
 export type FighterFilter = "all" | "favorites" | "common" | "rare" | "legend";
+export type StrategyModeId = "balanced" | "speedrun" | "bulwark" | "chaos";
 
 export const SHOWROOM_STORAGE_KEYS = {
   vibe: "snack-surge-vibe",
   motion: "snack-surge-motion",
   favorites: "snack-surge-favorites",
+  strategy: "snack-surge-strategy",
 } as const;
 
 export const VIBE_MODES: Record<
@@ -55,12 +57,56 @@ export const HERO_BEATS = [
   "A showroom for snack-fueled monsters.",
 ] as const;
 
+export const STRATEGY_MODES: Record<
+  StrategyModeId,
+  {
+    label: string;
+    shortLabel: string;
+    accent: string;
+    description: string;
+    formula: string;
+  }
+> = {
+  balanced: {
+    label: "Balanced Tray",
+    shortLabel: "Balance",
+    accent: "#f8fafc",
+    description: "A stable draft that keeps HP, attack, speed, and weirdness in play.",
+    formula: "HP + ATK + SPD + WRD",
+  },
+  speedrun: {
+    label: "Neon Speedrun",
+    shortLabel: "Speed",
+    accent: "#67e8f9",
+    description: "Fast fighters and sharp attackers for sprinting through the lunch rush.",
+    formula: "SPD x2 + ATK + WRD",
+  },
+  bulwark: {
+    label: "Lunchline Bulwark",
+    shortLabel: "Wall",
+    accent: "#fde68a",
+    description: "Heavy HP and reliable weirdness for holding the cafeteria line.",
+    formula: "HP x2 + WRD + ATK",
+  },
+  chaos: {
+    label: "Contraband Chaos",
+    shortLabel: "Chaos",
+    accent: "#f0abfc",
+    description: "Maximum oddity, legend bias, and favorite energy for spectacle pulls.",
+    formula: "WRD x2 + rarity + favorites",
+  },
+};
+
 export function isVibeMode(value: string | null): value is VibeModeId {
   return value === "arcade" || value === "toxic" || value === "noir";
 }
 
 export function isMotionLevel(value: string | null): value is MotionLevel {
   return value === "calm" || value === "showtime";
+}
+
+export function isStrategyMode(value: string | null): value is StrategyModeId {
+  return value === "balanced" || value === "speedrun" || value === "bulwark" || value === "chaos";
 }
 
 export function normalizeFavorites(ids: readonly string[]) {
@@ -92,6 +138,58 @@ export function filterFighters(
     return fighters.filter((fighter) => favorites.includes(fighter.id));
   }
   return fighters.filter((fighter) => FIGHTER_CARD_META[fighter.id].rarity === filter);
+}
+
+export function fighterStrategyScore(
+  fighter: AvatarDef,
+  strategy: StrategyModeId,
+  favorites: readonly PlayerAvatarId[] = [],
+) {
+  const meta = FIGHTER_CARD_META[fighter.id];
+  const rarityBoost = meta.rarity === "legend" ? 18 : meta.rarity === "rare" ? 8 : 0;
+  const favoriteBoost = favorites.includes(fighter.id) ? 12 : 0;
+
+  switch (strategy) {
+    case "speedrun":
+      return meta.spd * 2 + meta.atk + meta.weird * 0.55 + rarityBoost + favoriteBoost;
+    case "bulwark":
+      return meta.hp * 2 + meta.weird * 0.65 + meta.atk * 0.45 + rarityBoost + favoriteBoost;
+    case "chaos":
+      return meta.weird * 2 + rarityBoost * 1.5 + favoriteBoost * 1.5 + meta.spd * 0.35;
+    case "balanced":
+    default:
+      return meta.hp + meta.atk + meta.spd + meta.weird + rarityBoost + favoriteBoost;
+  }
+}
+
+export function recommendFightersForStrategy(
+  fighters: readonly AvatarDef[] = PLAYER_AVATARS,
+  strategy: StrategyModeId,
+  favorites: readonly PlayerAvatarId[] = [],
+  count = 3,
+) {
+  return [...fighters]
+    .sort((a, b) => {
+      const scoreDelta =
+        fighterStrategyScore(b, strategy, favorites) - fighterStrategyScore(a, strategy, favorites);
+      if (scoreDelta !== 0) return scoreDelta;
+      return FIGHTER_CARD_META[a.id].number.localeCompare(FIGHTER_CARD_META[b.id].number);
+    })
+    .slice(0, Math.max(0, count));
+}
+
+export function buildCardSummary(fighter: AvatarDef) {
+  const meta = FIGHTER_CARD_META[fighter.id];
+  return `${fighter.label} #${meta.number} - ${fighter.tagline} (${meta.rarity.toUpperCase()})`;
+}
+
+export function buildLineupBrief(
+  strategy: StrategyModeId,
+  fighters: readonly AvatarDef[],
+) {
+  const mode = STRATEGY_MODES[strategy];
+  const lineup = fighters.map((fighter) => buildCardSummary(fighter)).join(" / ");
+  return `Snack Surge ${mode.label}: ${lineup}`;
 }
 
 export function getRosterStats(fighters: readonly AvatarDef[] = PLAYER_AVATARS) {
