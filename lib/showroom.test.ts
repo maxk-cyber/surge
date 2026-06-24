@@ -52,8 +52,8 @@ describe("showroom feature logic", () => {
     ]);
 
     expect(recommendFightersForStrategy(PLAYER_AVATARS, "bulwark", [], 3).map((fighter) => fighter.id)).toEqual([
-      "burgerlich",
       "gaperskull",
+      "burgerlich",
       "skullmic",
     ]);
   });
