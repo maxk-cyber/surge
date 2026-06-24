@@ -41,8 +41,9 @@ vi.mock("motion/react", () => {
 describe("PackOpening", () => {
   beforeEach(() => {
     localStorage.clear();
-    Object.assign(navigator, {
-      clipboard: {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
         writeText: vi.fn().mockResolvedValue(undefined),
       },
     });
