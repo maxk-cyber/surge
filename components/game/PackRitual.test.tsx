@@ -42,14 +42,15 @@ vi.mock("motion/react", () => {
 describe("PackRitual", () => {
   beforeEach(() => {
     localStorage.clear();
-    Object.defineProperty(navigator, "clipboard", {
-      configurable: true,
-      value: { writeText: vi.fn().mockResolvedValue(undefined) },
-    });
   });
 
   it("reveals pulls, favorites a pull, and copies the pack summary", async () => {
     const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
     const onToggleFavorite = vi.fn();
 
     render(React.createElement(PackRitual, { favorites: [], onToggleFavorite }));
@@ -65,7 +66,7 @@ describe("PackRitual", () => {
     expect(onToggleFavorite).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByRole("button", { name: /copy pack pull summary/i }));
-    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining("Snack Surge")));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Snack Surge")));
     expect(screen.getByRole("button", { name: /copy pack pull summary/i })).toHaveTextContent("Copied");
   });
 
