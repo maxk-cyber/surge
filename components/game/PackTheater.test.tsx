@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PackTheater } from "@/components/game/PackTheater";
@@ -44,15 +44,20 @@ describe("PackTheater", () => {
   beforeEach(() => {
     localStorage.clear();
     writeText.mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", {
+  });
+
+  function stubClipboard() {
+    Object.defineProperty(window.navigator, "clipboard", {
       configurable: true,
+      writable: true,
       value: { writeText },
     });
-  });
+  }
 
   it("persists lane selection, reveals a pull, favorites it, and copies the manifest", async () => {
     const user = userEvent.setup();
     const onToggleFavorite = vi.fn();
+    stubClipboard();
 
     render(
       React.createElement(PackTheater, {
@@ -80,7 +85,12 @@ describe("PackTheater", () => {
     await user.click(screen.getByRole("button", { name: /add .* favorite/i }));
     expect(onToggleFavorite).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole("button", { name: /copy pack manifest/i }));
-    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Snack Surge Neon Slime Rush pack"));
+    expect(window.navigator.clipboard.writeText).toBe(writeText);
+    const copyButton = screen.getByRole("button", { name: /copy pack manifest/i });
+    expect(copyButton).not.toBeDisabled();
+    fireEvent.click(copyButton);
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Snack Surge Neon Slime Rush pack")),
+    );
   });
 });

@@ -100,7 +100,9 @@ export function PackTheater({
 
   const copyManifest = async () => {
     try {
-      await navigator.clipboard?.writeText(formatPackManifest(lane, pulls));
+      const writeText = window.navigator.clipboard?.writeText;
+      if (!writeText) throw new Error("Clipboard unavailable");
+      await writeText.call(window.navigator.clipboard, formatPackManifest(lane, pulls));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1300);
     } catch {
