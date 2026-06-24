@@ -150,6 +150,14 @@ export function PackRitual({
                 <p className="mt-4 rounded-2xl border border-white/10 bg-white/[0.05] p-4 font-body text-xs leading-6 text-secondary">
                   {lane.promise}
                 </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <MagneticButton onClick={revealed ? nextPack : openPack}>
+                    {revealed ? "Next pack" : "Open pack"}
+                  </MagneticButton>
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-black/35 px-3 py-2 font-body text-[9px] uppercase tracking-[0.16em] text-secondary">
+                    Focus panel + R
+                  </span>
+                </div>
               </div>
 
               <div className="mt-6">
