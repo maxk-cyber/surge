@@ -53,6 +53,33 @@ body {
   animation: holo-shimmer 4s ease-in-out infinite;
 }
 
+.shiny-text {
+  background: linear-gradient(110deg, rgba(255, 255, 255, 0.46) 0%, #ffffff 38%, rgba(255, 255, 255, 0.5) 52%);
+  background-size: 220% 100%;
+  background-position: 120% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shiny-text-sweep 3.2s ease-in-out infinite;
+}
+
+.shiny-text--still {
+  animation: none;
+  background-position: 42% 0;
+}
+
+.star-border {
+  background:
+    radial-gradient(circle at var(--star-x, 12%) 0%, var(--star-border-color), transparent 28%),
+    conic-gradient(from 90deg, transparent 0 62%, var(--star-border-color), transparent 78% 100%);
+  box-shadow: 0 22px 90px rgba(0, 0, 0, 0.55);
+  animation: star-border-orbit 5s linear infinite;
+}
+
+.star-border--still {
+  animation: none;
+}
+
 @keyframes holo-shimmer {
   0%,
   100% {
@@ -60,6 +87,32 @@ body {
   }
   50% {
     background-position: 100% 50%;
+  }
+}
+
+@keyframes shiny-text-sweep {
+  0%,
+  100% {
+    background-position: 120% 0;
+  }
+  45%,
+  60% {
+    background-position: 0% 0;
+  }
+}
+
+@keyframes star-border-orbit {
+  0% {
+    --star-x: 12%;
+    filter: saturate(1);
+  }
+  50% {
+    --star-x: 88%;
+    filter: saturate(1.35);
+  }
+  100% {
+    --star-x: 12%;
+    filter: saturate(1);
   }
 }
 
@@ -141,6 +194,11 @@ body {
   }
 
   .fighter-card-shine {
+    animation: none;
+  }
+
+  .shiny-text,
+  .star-border {
     animation: none;
   }
 }

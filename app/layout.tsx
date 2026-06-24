@@ -18,10 +18,9 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Snack Surge — Premium Fighter Showroom",
   description:
-    "A premium interactive fighter card showroom with PNG avatar art, ReactBits-style effects, filters, favorites, and motion controls.",
+    "A premium interactive fighter card showroom with generated avatar art, ReactBits-style effects, pack reveals, filters, favorites, and motion controls.",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
       { url: "/favicon.svg", type: "image/svg+xml" },
     ],
   },

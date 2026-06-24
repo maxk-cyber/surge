@@ -114,6 +114,50 @@ export function SpotlightCard({
   );
 }
 
+export function ShinyText({
+  children,
+  className,
+  disabled,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  disabled?: boolean;
+}) {
+  const reduced = useReducedMotion();
+
+  return (
+    <span
+      className={cn("shiny-text inline-block", (reduced || disabled) && "shiny-text--still", className)}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function StarBorder({
+  children,
+  className,
+  color = "rgba(255,255,255,0.72)",
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  color?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <div
+      className={cn("star-border relative rounded-[2rem] p-px", calm && "star-border--still", className)}
+      style={{ ["--star-border-color" as string]: color }}
+    >
+      <div className="relative h-full rounded-[calc(2rem-1px)] bg-black/70">{children}</div>
+    </div>
+  );
+}
+
 export function MagneticButton({
   children,
   className,
