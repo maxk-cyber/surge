@@ -1,417 +1,122 @@
-/* eslint-disable react/no-unknown-property */
 "use client";
 
-import * as THREE from "three";
-import { Suspense, useRef, useState, useEffect, memo } from "react";
-import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
-import {
-  useFBO,
-  useGLTF,
-  useScroll,
-  Image,
-  Scroll,
-  Preload,
-  ScrollControls,
-  MeshTransmissionMaterial,
-  Text,
-} from "@react-three/drei";
-import { easing } from "maath";
-import { publicAssetPath } from "@/lib/public-path";
+import { useMemo, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { cn } from "@/lib/utils";
 
 type FluidGlassProps = {
   mode?: "lens" | "bar" | "cube";
-  lensProps?: Record<string, unknown>;
+  lensProps?: {
+    accent?: string;
+    chromaticAberration?: number;
+  } & Record<string, unknown>;
   barProps?: Record<string, unknown>;
   cubeProps?: Record<string, unknown>;
   imageUrls?: string[];
   title?: string;
 };
 
-const DEFAULT_AVATAR_IMAGES = [
-  publicAssetPath("/avatars/skullmic.png"),
-  publicAssetPath("/avatars/skullbunny.png"),
-  publicAssetPath("/avatars/gaperskull.png"),
-  publicAssetPath("/avatars/nachomancer.png"),
-  publicAssetPath("/avatars/burgerlich.png"),
-];
-
-function absUrl(path: string) {
-  if (path.startsWith("http") || path.startsWith("data:")) return path;
-  if (typeof window !== "undefined") return `${window.location.origin}${path}`;
-  return path;
-}
-
-function pickImageUrls(urls?: string[]) {
-  const pool = urls?.length ? urls : DEFAULT_AVATAR_IMAGES;
-  return Array.from({ length: 5 }, (_, i) => absUrl(pool[i % pool.length]!));
+function normalizeImages(urls?: string[]) {
+  const pool = urls?.length ? urls : [];
+  return Array.from({ length: 10 }, (_, index) => pool[index % Math.max(1, pool.length)]).filter(Boolean) as string[];
 }
 
 export default function FluidGlass({
-  mode = "lens",
-  lensProps = {},
-  barProps = {},
-  cubeProps = {},
   imageUrls,
   title = "Snack Surge",
+  lensProps = {},
 }: FluidGlassProps) {
-  const Wrapper = mode === "bar" ? Bar : mode === "cube" ? Cube : Lens;
-  const rawOverrides = mode === "bar" ? barProps : mode === "cube" ? cubeProps : lensProps;
-
-  const {
-    navItems = [
-      { label: "Globe", link: "#globe" },
-      { label: "Cards", link: "#cards" },
-      { label: "Glass", link: "#glass" },
-    ],
-    ...modeProps
-  } = rawOverrides as {
-    navItems?: { label: string; link: string }[];
-    [key: string]: unknown;
-  };
-
-  const images = pickImageUrls(imageUrls);
+  const reduced = useReducedMotion();
+  const [pointer, setPointer] = useState({ x: 54, y: 42 });
+  const images = useMemo(() => normalizeImages(imageUrls), [imageUrls]);
+  const accent = String(lensProps.accent ?? "#a78bfa");
+  const chroma = Number(lensProps.chromaticAberration ?? 0.08);
 
   return (
-    <Canvas
-      camera={{ position: [0, 0, 20], fov: 15 }}
-      gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
-      style={{ width: "100%", height: "100%", background: "transparent" }}
-      onCreated={({ gl }) => {
-        gl.setClearColor(0x5227ff, 1);
-        gl.autoClear = true;
+    <div
+      className="relative h-full min-h-[560px] overflow-hidden bg-black"
+      onPointerMove={(event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        setPointer({
+          x: ((event.clientX - rect.left) / rect.width) * 100,
+          y: ((event.clientY - rect.top) / rect.height) * 100,
+        });
       }}
     >
-      <Suspense fallback={null}>
-        <ScrollControls damping={0.2} pages={3} distance={0.4}>
-          {mode === "bar" && <NavItems items={navItems} />}
-          <Wrapper modeProps={modeProps}>
-            <Scroll>
-              <Typography title={title} />
-              <Images urls={images} />
-            </Scroll>
-            <Scroll html />
-            <Preload all />
-          </Wrapper>
-        </ScrollControls>
-      </Suspense>
-    </Canvas>
-  );
-}
-
-const ModeWrapper = memo(function ModeWrapper({
-  children,
-  glb,
-  geometryKey,
-  lockToBottom = false,
-  followPointer = true,
-  modeProps = {},
-  ...props
-}: {
-  children?: React.ReactNode;
-  glb: string;
-  geometryKey: string;
-  lockToBottom?: boolean;
-  followPointer?: boolean;
-  modeProps?: Record<string, unknown>;
-}) {
-  const ref = useRef<THREE.Mesh>(null);
-  const { nodes } = useGLTF(glb) as unknown as {
-    nodes: Record<string, { geometry: THREE.BufferGeometry }>;
-  };
-  const buffer = useFBO();
-  const { viewport: vp } = useThree();
-  const [scene] = useState(() => new THREE.Scene());
-  const geoWidthRef = useRef(1);
-
-  useEffect(() => {
-    const geo = nodes[geometryKey]?.geometry;
-    if (!geo) return;
-    geo.computeBoundingBox();
-    geoWidthRef.current = geo.boundingBox!.max.x - geo.boundingBox!.min.x || 1;
-  }, [nodes, geometryKey]);
-
-  useFrame((state, delta) => {
-    const { gl, viewport, pointer, camera } = state;
-    const v = viewport.getCurrentViewport(camera, [0, 0, 15]);
-
-    const destX = followPointer ? (pointer.x * v.width) / 2 : 0;
-    const destY = lockToBottom
-      ? -v.height / 2 + 0.2
-      : followPointer
-        ? (pointer.y * v.height) / 2
-        : 0;
-
-    if (ref.current) {
-      easing.damp3(ref.current.position, [destX, destY, 15], 0.15, delta);
-
-      if (modeProps.scale == null) {
-        const maxWorld = v.width * 0.9;
-        const desired = maxWorld / geoWidthRef.current;
-        ref.current.scale.setScalar(Math.min(0.15, desired));
-      }
-    }
-
-    gl.setRenderTarget(buffer);
-    gl.setClearColor(0x5227ff, 1);
-    gl.clear(true, true, true);
-    gl.render(scene, camera);
-    gl.setRenderTarget(null);
-    gl.setClearColor(0x5227ff, 1);
-  });
-
-  const { scale, ior, thickness, anisotropy, chromaticAberration, ...extraMat } = modeProps;
-
-  return (
-    <>
-      {createPortal(children, scene)}
-      <mesh scale={[vp.width, vp.height, 1]}>
-        <planeGeometry />
-        <meshBasicMaterial map={buffer.texture} toneMapped={false} />
-      </mesh>
-      <mesh
-        ref={ref}
-        scale={(scale as number) ?? 0.15}
-        rotation-x={Math.PI / 2}
-        geometry={nodes[geometryKey]?.geometry}
-        {...props}
-      >
-        <MeshTransmissionMaterial
-          buffer={buffer.texture}
-          ior={(ior as number) ?? 1.15}
-          thickness={(thickness as number) ?? 5}
-          anisotropy={(anisotropy as number) ?? 0.01}
-          chromaticAberration={(chromaticAberration as number) ?? 0.1}
-          samples={8}
-          resolution={512}
-          {...extraMat}
-        />
-      </mesh>
-    </>
-  );
-});
-
-function Lens({
-  modeProps,
-  ...p
-}: {
-  modeProps?: Record<string, unknown>;
-  children?: React.ReactNode;
-}) {
-  return (
-    <ModeWrapper
-      glb={publicAssetPath("/assets/3d/lens.glb")}
-      geometryKey="Cylinder"
-      followPointer
-      modeProps={modeProps}
-      {...p}
-    />
-  );
-}
-
-function Cube({
-  modeProps,
-  ...p
-}: {
-  modeProps?: Record<string, unknown>;
-  children?: React.ReactNode;
-}) {
-  return (
-    <ModeWrapper
-      glb={publicAssetPath("/assets/3d/cube.glb")}
-      geometryKey="Cube"
-      followPointer
-      modeProps={modeProps}
-      {...p}
-    />
-  );
-}
-
-function Bar({
-  modeProps = {},
-  ...p
-}: {
-  modeProps?: Record<string, unknown>;
-  children?: React.ReactNode;
-}) {
-  const defaultMat = {
-    transmission: 1,
-    roughness: 0,
-    thickness: 10,
-    ior: 1.15,
-    color: "#ffffff",
-    attenuationColor: "#ffffff",
-    attenuationDistance: 0.25,
-  };
-
-  return (
-    <ModeWrapper
-      glb={publicAssetPath("/assets/3d/bar.glb")}
-      geometryKey="Cube"
-      lockToBottom
-      followPointer={false}
-      modeProps={{ ...defaultMat, ...modeProps }}
-      {...p}
-    />
-  );
-}
-
-function NavItems({ items }: { items: { label: string; link: string }[] }) {
-  const group = useRef<THREE.Group>(null);
-  const { viewport, camera } = useThree();
-
-  const DEVICE = {
-    mobile: { max: 639, spacing: 0.2, fontSize: 0.035 },
-    tablet: { max: 1023, spacing: 0.24, fontSize: 0.035 },
-    desktop: { max: Infinity, spacing: 0.3, fontSize: 0.035 },
-  };
-  type DeviceKey = "mobile" | "tablet" | "desktop";
-  const getDevice = (): DeviceKey => {
-    const w = window.innerWidth;
-    return w <= DEVICE.mobile.max ? "mobile" : w <= DEVICE.tablet.max ? "tablet" : "desktop";
-  };
-
-  const [device, setDevice] = useState<DeviceKey>(getDevice());
-
-  useEffect(() => {
-    const onResize = () => setDevice(getDevice());
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  const { spacing, fontSize } = DEVICE[device];
-
-  useFrame(() => {
-    if (!group.current) return;
-    const v = viewport.getCurrentViewport(camera, [0, 0, 15]);
-    group.current.position.set(0, -v.height / 2 + 0.2, 15.1);
-
-    group.current.children.forEach((child, i) => {
-      child.position.x = (i - (items.length - 1) / 2) * spacing;
-    });
-  });
-
-  const handleNavigate = (link: string) => {
-    if (!link) return;
-    if (link.startsWith("#")) {
-      document.querySelector(link)?.scrollIntoView({ behavior: "smooth" });
-    } else {
-      window.location.href = link;
-    }
-  };
-
-  return (
-    <group ref={group} renderOrder={10}>
-      {items.map(({ label, link }) => (
-        <Text
-          key={label}
-          fontSize={fontSize}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0}
-          outlineBlur="20%"
-          outlineColor="#000"
-          outlineOpacity={0.5}
-          renderOrder={10}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleNavigate(link);
-          }}
-          onPointerOver={() => {
-            document.body.style.cursor = "pointer";
-          }}
-          onPointerOut={() => {
-            document.body.style.cursor = "auto";
-          }}
-        >
-          {label}
-        </Text>
-      ))}
-    </group>
-  );
-}
-
-type ImageMaterial = THREE.Material & { zoom?: number };
-
-function Images({ urls }: { urls: string[] }) {
-  const group = useRef<THREE.Group>(null);
-  const data = useScroll();
-  const { height } = useThree((s) => s.viewport);
-
-  useFrame(() => {
-    const children = group.current?.children;
-    if (!children?.[0]) return;
-    const mat = (i: number) => (children[i] as THREE.Mesh)?.material as ImageMaterial | undefined;
-    if (mat(0)) mat(0)!.zoom = 1 + data.range(0, 1 / 3) / 3;
-    if (mat(1)) mat(1)!.zoom = 1 + data.range(0, 1 / 3) / 3;
-    if (mat(2)) mat(2)!.zoom = 1 + data.range(1.15 / 3, 1 / 3) / 2;
-    if (mat(3)) mat(3)!.zoom = 1 + data.range(1.15 / 3, 1 / 3) / 2;
-    if (mat(4)) mat(4)!.zoom = 1 + data.range(1.15 / 3, 1 / 3) / 2;
-  });
-
-  return (
-    <group ref={group}>
-      <Image
-        position={[-2, 0, 0]}
-        scale={[3, height / 1.1, 1] as unknown as [number, number]}
-        url={urls[0]!}
+      <div
+        className="absolute inset-0 opacity-80"
+        style={{
+          background: `radial-gradient(circle at ${pointer.x}% ${pointer.y}%, ${accent}2b, transparent 34%), linear-gradient(135deg, #050505, #111 48%, #050505)`,
+        }}
       />
-      <Image position={[2, 0, 3]} scale={3} url={urls[1]!} />
-      <Image
-        position={[-2.05, -height, 6]}
-        scale={[1, 3, 1] as unknown as [number, number]}
-        url={urls[2]!}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:42px_42px] opacity-40" />
+
+      <div className="absolute left-1/2 top-1/2 z-10 w-[min(84vw,760px)] -translate-x-1/2 -translate-y-1/2">
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/[0.055] p-4 shadow-[0_30px_120px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `radial-gradient(circle at ${pointer.x}% ${pointer.y}%, rgba(255,255,255,0.2), transparent 28%)`,
+            }}
+          />
+          <div className="relative grid max-h-[430px] snap-y snap-mandatory gap-4 overflow-y-auto pr-2">
+            {images.map((src, index) => (
+              <motion.figure
+                key={`${src}-${index}`}
+                className="group relative grid min-h-[190px] snap-center grid-cols-[120px_1fr] items-center gap-5 overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/45 p-4"
+                initial={false}
+                whileHover={reduced ? undefined : { scale: 1.015 }}
+                transition={{ type: "spring", stiffness: 260, damping: 24 }}
+              >
+                <div
+                  className="absolute inset-0 opacity-70"
+                  style={{
+                    background: `linear-gradient(${112 + index * 7}deg, transparent, ${accent}${Math.round(
+                      18 + chroma * 120,
+                    )
+                      .toString(16)
+                      .padStart(2, "0")}, transparent)`,
+                  }}
+                />
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06]">
+                  <img
+                    src={src}
+                    alt=""
+                    className="h-24 w-24 object-contain drop-shadow-[0_16px_32px_rgba(0,0,0,0.7)]"
+                    aria-hidden="true"
+                    draggable={false}
+                  />
+                </div>
+                <figcaption className="relative">
+                  <p className="font-body text-[10px] uppercase tracking-[0.32em] text-secondary">
+                    Prism sample {String(index + 1).padStart(2, "0")}
+                  </p>
+                  <p className="mt-2 font-display text-2xl uppercase tracking-[0.12em] text-foreground">
+                    {title} lens pass
+                  </p>
+                  <p className="mt-2 max-w-md font-body text-xs leading-6 text-secondary/85">
+                    A lightweight CSS refractor keeps the collectible art tactile while avoiding heavy
+                    model downloads on static hosting.
+                  </p>
+                </figcaption>
+              </motion.figure>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <motion.div
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute h-56 w-56 rounded-full border border-white/25 bg-white/[0.08] shadow-[inset_0_0_42px_rgba(255,255,255,0.16),0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-md",
+          reduced && "hidden",
+        )}
+        animate={{
+          left: `calc(${pointer.x}% - 7rem)`,
+          top: `calc(${pointer.y}% - 7rem)`,
+        }}
+        transition={{ type: "spring", stiffness: 140, damping: 22 }}
       />
-      <Image
-        position={[-0.6, -height, 9]}
-        scale={[1, 2, 1] as unknown as [number, number]}
-        url={urls[3]!}
-      />
-      <Image position={[0.75, -height, 10.5]} scale={1.5} url={urls[4]!} />
-    </group>
+    </div>
   );
 }
-
-function Typography({ title }: { title: string }) {
-  const DEVICE = {
-    mobile: { fontSize: 0.2 },
-    tablet: { fontSize: 0.4 },
-    desktop: { fontSize: 0.6 },
-  };
-  type DeviceKey = "mobile" | "tablet" | "desktop";
-  const getDevice = (): DeviceKey => {
-    const w = window.innerWidth;
-    return w <= 639 ? "mobile" : w <= 1023 ? "tablet" : "desktop";
-  };
-
-  const [device, setDevice] = useState<DeviceKey>(getDevice());
-
-  useEffect(() => {
-    const onResize = () => setDevice(getDevice());
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  const { fontSize } = DEVICE[device];
-
-  return (
-    <Text
-      position={[0, 0, 12]}
-      fontSize={fontSize}
-      letterSpacing={-0.05}
-      outlineWidth={0}
-      outlineBlur="20%"
-      outlineColor="#000"
-      outlineOpacity={0.5}
-      color="white"
-      anchorX="center"
-      anchorY="middle"
-    >
-      {title}
-    </Text>
-  );
-}
-
-useGLTF.preload(publicAssetPath("/assets/3d/lens.glb"));
-useGLTF.preload(publicAssetPath("/assets/3d/cube.glb"));
-useGLTF.preload(publicAssetPath("/assets/3d/bar.glb"));
