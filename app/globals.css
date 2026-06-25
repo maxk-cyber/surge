@@ -126,6 +126,56 @@ body {
   animation: aurora-pulse 11s ease-in-out infinite;
 }
 
+@keyframes shiny-text {
+  from {
+    background-position: 220% 0;
+  }
+  to {
+    background-position: -20% 0;
+  }
+}
+
+.animate-shiny-text {
+  animation: shiny-text 3.8s linear infinite;
+}
+
+.star-border {
+  background:
+    radial-gradient(circle at 0% 0%, var(--star-border-color, rgba(255, 255, 255, 0.9)), transparent 22%),
+    radial-gradient(circle at 100% 100%, rgba(255, 255, 255, 0.5), transparent 22%),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
+  background-size: 180% 180%;
+}
+
+@keyframes star-border {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-star-border {
+  animation: star-border 5.2s ease-in-out infinite;
+}
+
+@keyframes signal-ribbon {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-signal-ribbon {
+  animation: signal-ribbon 18s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -141,6 +191,12 @@ body {
   }
 
   .fighter-card-shine {
+    animation: none;
+  }
+
+  .animate-shiny-text,
+  .animate-star-border,
+  .animate-signal-ribbon {
     animation: none;
   }
 }

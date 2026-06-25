@@ -3,12 +3,16 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { AvatarPicker } from "@/components/game/AvatarPicker";
+import { PackLab } from "@/components/game/PackLab";
 import {
   AnimatedReveal,
   AuroraBackdrop,
   ClickSpark,
   MagneticButton,
+  ShinyText,
+  SignalRibbon,
   SpotlightCard,
+  StarBorder,
 } from "@/components/ui/reactbits-effects";
 import { avatarGalleryImages, avatarScrollImages } from "@/lib/gallery-images";
 import { useIterator } from "@/lib/iterator";
@@ -52,6 +56,7 @@ function ShowroomDock() {
     >
       {[
         ["Brief", "#brief"],
+        ["Lab", "#lab"],
         ["Dome", "#globe"],
         ["Glass", "#glass"],
         ["Cards", "#cards"],
@@ -120,10 +125,10 @@ export default function CardGalleryPage() {
           <AnimatedReveal motion={motionLevel}>
             <div>
               <p className="font-body text-[10px] uppercase tracking-[0.45em] text-secondary">
-                Snack Surge · Premium Fighter Showroom
+                Snack Surge · Collector Command Center
               </p>
               <h1 className="mt-5 max-w-4xl font-display text-5xl uppercase leading-[0.92] tracking-[0.08em] text-foreground md:text-7xl lg:text-8xl">
-                Card gallery for cafeteria cryptids.
+                Card gallery for <ShinyText motion={motionLevel}>cafeteria cryptids</ShinyText>.
               </h1>
               <p
                 className="mt-5 min-h-8 font-body text-sm uppercase tracking-[0.2em]"
@@ -133,12 +138,15 @@ export default function CardGalleryPage() {
                 {hero.activeItem}
               </p>
               <p className="mt-6 max-w-2xl font-body text-sm leading-7 text-secondary/90 md:text-base">
-                Browse the roster as a product-grade collectible interface: spin the PNG portrait dome,
-                inspect the refraction wall, filter rarity, favorite your fighters, and copy shareable
-                card summaries from the deck.
+                Browse the roster as a product-grade collectible interface: curate stat-aware pack
+                lineups, spin the generated portrait dome, inspect the prism wall, favorite fighters,
+                and copy shareable card drops from the deck.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
+                <MagneticButton onClick={() => document.querySelector("#lab")?.scrollIntoView({ behavior: "smooth" })}>
+                  Open Pack Lab
+                </MagneticButton>
                 <MagneticButton onClick={() => document.querySelector("#cards")?.scrollIntoView({ behavior: "smooth" })}>
                   Draft a fighter
                 </MagneticButton>
@@ -146,10 +154,16 @@ export default function CardGalleryPage() {
                   Spin the dome
                 </MagneticButton>
               </div>
+              <SignalRibbon
+                className="mt-8 max-w-2xl"
+                motion={motionLevel}
+                items={["generated art", "static-host ready", "favorites persist", "motion controls"]}
+              />
             </div>
           </AnimatedReveal>
 
           <AnimatedReveal delay={0.12} motion={motionLevel}>
+            <StarBorder color={vibeMode.accent} motion={motionLevel}>
             <SpotlightCard spotlightColor={`${vibeMode.glow}26`} className="p-5 md:p-6">
               <div className="relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/50 p-5">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(255,255,255,0.16),transparent_38%)]" />
@@ -212,12 +226,13 @@ export default function CardGalleryPage() {
                 </div>
               </div>
             </SpotlightCard>
+            </StarBorder>
           </AnimatedReveal>
         </header>
 
         <section className="relative z-10 mx-auto grid w-full max-w-7xl gap-4 px-5 md:grid-cols-4 md:px-8">
           {[
-            ["Roster", rosterStats.total, "PNG fighters loaded from public/avatars"],
+            ["Roster", rosterStats.total, "Generated fighters ready for static export"],
             ["Legends", rosterStats.legend, "Top-tier pulls with premium foil"],
             ["Avg weird", rosterStats.averageWeird, "Snack Surge oddity score"],
             ["Shown", filteredCount, `${filter} filter active`],
@@ -234,10 +249,16 @@ export default function CardGalleryPage() {
           ))}
         </section>
 
+        <PackLab
+          favorites={favorites}
+          onToggleFavorite={onToggleFavorite}
+          motionLevel={motionLevel}
+        />
+
         <section id="globe" className="gallery-section relative z-10 mt-20 h-[min(88vh,920px)] w-full">
           <div className="pointer-events-none absolute inset-x-0 top-8 z-30 px-5 text-center">
             <p className="font-body text-[10px] uppercase tracking-[0.35em] text-secondary">
-              ReactBits DomeGallery · Public PNG atlas
+              ReactBits DomeGallery · Generated portrait atlas
             </p>
             <h2 className="mt-2 font-display text-3xl uppercase tracking-[0.12em] text-foreground md:text-5xl">
               Spin the cafeteria sphere
@@ -266,15 +287,15 @@ export default function CardGalleryPage() {
             <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
               <div>
                 <p className="font-body text-[10px] uppercase tracking-[0.35em] text-secondary">
-                  FluidGlass · GLB lens assets
+                  FluidGlass · CSS prism wall
                 </p>
                 <h2 className="mt-2 font-display text-3xl uppercase tracking-[0.1em] md:text-5xl">
                   Refraction wall
                 </h2>
               </div>
               <p className="max-w-md font-body text-xs leading-6 text-secondary">
-                Scroll inside the panel and move your pointer: the lens bends real checked-in PNG art,
-                giving the roster a tactile premium preview without hiding the cards.
+                Scroll inside the panel and move your pointer: the prism bends generated fighter art,
+                giving the roster a tactile premium preview without fragile model assets.
               </p>
             </div>
           </AnimatedReveal>
@@ -289,6 +310,7 @@ export default function CardGalleryPage() {
                 title="Snack Surge"
                 imageUrls={scrollImages}
                 lensProps={{
+                  accent: vibeMode.accent,
                   scale: 0.25,
                   ior: 1.15,
                   thickness: 5,

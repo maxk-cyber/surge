@@ -217,3 +217,99 @@ export function ClickSpark({
     </div>
   );
 }
+
+export function ShinyText({
+  children,
+  className,
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <span
+      className={cn(
+        "shiny-text inline-block bg-[linear-gradient(110deg,#f8fafc_0%,#a8a8a8_36%,#ffffff_50%,#a8a8a8_64%,#f8fafc_100%)] bg-[length:220%_100%] bg-clip-text text-transparent",
+        !calm && "animate-shiny-text",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function StarBorder({
+  children,
+  className,
+  innerClassName,
+  color = "rgba(255,255,255,0.9)",
+  motion = "showtime",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  innerClassName?: string;
+  color?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+
+  return (
+    <div
+      className={cn(
+        "star-border relative overflow-hidden rounded-[2rem] p-px",
+        !calm && "animate-star-border",
+        className,
+      )}
+      style={{ ["--star-border-color" as string]: color }}
+    >
+      <div className={cn("relative rounded-[calc(2rem-1px)] bg-black/55 backdrop-blur-xl", innerClassName)}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function SignalRibbon({
+  items,
+  className,
+  motion = "showtime",
+}: {
+  items: readonly string[];
+  className?: string;
+  motion?: MotionPreference;
+}) {
+  const reduced = useReducedMotion();
+  const calm = shouldSoftenMotion(reduced, motion);
+  const content = items.length ? items : ["Snack Surge"];
+
+  return (
+    <div
+      className={cn(
+        "signal-ribbon relative overflow-hidden rounded-full border border-white/10 bg-white/[0.05] py-2",
+        className,
+      )}
+      aria-label={content.join(", ")}
+    >
+      <div
+        className={cn(
+          "flex w-max items-center gap-3 whitespace-nowrap font-body text-[10px] uppercase tracking-[0.28em] text-secondary",
+          !calm && "animate-signal-ribbon",
+        )}
+        aria-hidden="true"
+      >
+        {[...content, ...content].map((item, index) => (
+          <span key={`${item}-${index}`} className="flex items-center gap-3 px-1">
+            <span>{item}</span>
+            <span className="h-1 w-1 rounded-full bg-current opacity-50" />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
