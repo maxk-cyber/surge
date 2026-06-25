@@ -21,7 +21,7 @@ describe("pack lab feature logic", () => {
     const vault = getPackLineup({ laneId: "vault" }).map((fighter) => fighter.id);
     const rush = getPackLineup({ laneId: "rush" }).map((fighter) => fighter.id);
 
-    expect(vault[0]).toBe("gaperskull");
+    expect(vault[0]).toBe("skullmic");
     expect(rush[0]).toBe("skullbunny");
     expect(vault).not.toEqual(rush);
   });
