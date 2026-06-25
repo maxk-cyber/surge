@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PackLab } from "@/components/game/PackLab";
 
+let writeTextMock: ReturnType<typeof vi.fn>;
+
 vi.mock("motion/react", () => {
   const stripMotionProps = (props: Record<string, unknown>) => {
     const {
@@ -43,11 +45,10 @@ vi.mock("motion/react", () => {
 describe("PackLab", () => {
   beforeEach(() => {
     localStorage.clear();
+    writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
-      value: {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      },
+      get: () => ({ writeText: writeTextMock }),
     });
   });
 
@@ -70,7 +71,7 @@ describe("PackLab", () => {
     render(React.createElement(PackLab, { motionLevel: "calm", onToggleFavorite }));
 
     await user.click(screen.getByRole("button", { name: /copy pack lab lineup/i }));
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining("After-Hours Vault VAULT-88"));
+    expect(writeTextMock).toHaveBeenCalledWith(expect.stringContaining("After-Hours Vault VAULT-88"));
     await waitFor(() => expect(screen.getByRole("button", { name: /copy pack lab lineup/i })).toHaveTextContent("Copied"));
 
     await user.click(screen.getByRole("button", { name: /add .* from favorites/i }));
